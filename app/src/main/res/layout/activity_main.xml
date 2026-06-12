@@ -133,23 +133,75 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Drawer Menu -->
-    <LinearLayout
+    <ScrollView
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="#111116"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:background="#111116">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Menu"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:paddingBottom="16dp"/>
+            android:orientation="vertical"
+            android:paddingTop="32dp"
+            android:paddingBottom="24dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
 
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jun AI"
+                android:textColor="#E53935"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:paddingBottom="4dp"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#2A2A35"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="⚙️  Settings" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🤖  Mini-Jun Settings" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🔢  Calculator" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🎨  Draw" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="📝  Notes" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="✅  To-do Lists" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🧠  Memory" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🌐  Translator" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="⏰  Reminder" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🎵  Songs" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="❓  Unanswered Questions" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="📊  Jun Performance" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🎙️  Voice Commands" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.drawerlayout.widget.DrawerLayout>
