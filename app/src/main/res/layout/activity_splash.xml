@@ -8,7 +8,7 @@
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/Jun_ai_splashscreen"
+        android:src="@drawable/jun_ai_splash"
         android:scaleType="centerCrop"/>
 
     <ProgressBar
