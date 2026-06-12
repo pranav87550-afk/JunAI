@@ -151,8 +151,8 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Jun AI"
-                android:textColor="#E53935"
+                android:text="Menu"
+                android:textColor="#FFFFFF"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:paddingBottom="4dp"/>
