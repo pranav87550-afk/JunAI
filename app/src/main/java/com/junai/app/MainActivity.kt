@@ -1,12 +1,14 @@
 package com.junai.app
 
-import androidx.appcompat.app.AppCompatActivity
+import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.TextView
+import android.widget.LinearLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -24,7 +26,6 @@ class MainActivity : AppCompatActivity() {
 
         drawerLayout = findViewById(R.id.drawerLayout)
 
-        // Menu button
         findViewById<ImageButton>(R.id.menuButton).setOnClickListener {
             if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
                 drawerLayout.closeDrawer(GravityCompat.START)
@@ -33,7 +34,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // RecyclerView setup
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages)
         recyclerView.adapter = chatAdapter
@@ -41,30 +41,44 @@ class MainActivity : AppCompatActivity() {
             it.stackFromEnd = true
         }
 
-        // Typing indicator
-        val typingIndicator = findViewById<TextView>(R.id.typingIndicator)
+        val typingIndicator = findViewById<LinearLayout>(R.id.typingIndicator)
+        val dot1 = findViewById<View>(R.id.dot1)
+        val dot2 = findViewById<View>(R.id.dot2)
+        val dot3 = findViewById<View>(R.id.dot3)
 
-        // Send button
         val messageInput = findViewById<EditText>(R.id.messageInput)
         findViewById<ImageButton>(R.id.sendButton).setOnClickListener {
             val text = messageInput.text.toString().trim()
             if (text.isEmpty()) return@setOnClickListener
 
-            // Add user message
             chatAdapter.addMessage(ChatMessage(text, isUser = true))
             messageInput.setText("")
             recyclerView.scrollToPosition(messages.size - 1)
 
-            // Show typing indicator
-            typingIndicator.visibility = android.view.View.VISIBLE
+            // Show typing indicator with animation
+            typingIndicator.visibility = View.VISIBLE
+            animateDot(dot1, 0)
+            animateDot(dot2, 150)
+            animateDot(dot3, 300)
 
-            // Reply after delay
             Handler(Looper.getMainLooper()).postDelayed({
-                typingIndicator.visibility = android.view.View.GONE
+                typingIndicator.visibility = View.GONE
+                dot1.clearAnimation()
+                dot2.clearAnimation()
+                dot3.clearAnimation()
                 chatAdapter.addMessage(ChatMessage("In development", isUser = false))
                 recyclerView.scrollToPosition(messages.size - 1)
-            }, 1000)
+            }, 1500)
         }
+    }
+
+    private fun animateDot(dot: View, delay: Long) {
+        val animator = ObjectAnimator.ofFloat(dot, "alpha", 0.2f, 1f)
+        animator.duration = 400
+        animator.repeatMode = ObjectAnimator.REVERSE
+        animator.repeatCount = ObjectAnimator.INFINITE
+        animator.startDelay = delay
+        animator.start()
     }
 
     override fun onBackPressed() {
