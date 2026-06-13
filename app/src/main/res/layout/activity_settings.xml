@@ -149,7 +149,7 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:text="Previous voice"
+                android:text="Preview voice"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/settings_button"
                 android:layout_marginBottom="16dp"/>
@@ -244,6 +244,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="FACTORY RESET"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/settings_button_red"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Save changes"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/settings_button_red"
                 android:layout_marginBottom="16dp"/>
