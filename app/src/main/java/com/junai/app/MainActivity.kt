@@ -1,6 +1,7 @@
 package com.junai.app
 
 import android.animation.ObjectAnimator
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,6 +9,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -34,6 +36,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Settings menu item
+        findViewById<TextView>(R.id.menuSettings).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages)
         recyclerView.adapter = chatAdapter
@@ -55,7 +63,6 @@ class MainActivity : AppCompatActivity() {
             messageInput.setText("")
             recyclerView.scrollToPosition(messages.size - 1)
 
-            // Show typing indicator with animation
             typingIndicator.visibility = View.VISIBLE
             animateDot(dot1, 0)
             animateDot(dot2, 150)
