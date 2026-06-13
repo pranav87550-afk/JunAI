@@ -1,9 +1,12 @@
 package com.junai.app
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.CompoundButtonCompat
 
 class MiniJunSettingsActivity : AppCompatActivity() {
 
@@ -18,7 +21,6 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         val miniJunSwitch = findViewById<Switch>(R.id.miniJunSwitch)
         val roamSwitch = findViewById<Switch>(R.id.roamSwitch)
 
-        // Set initial colors
         updateSwitchColor(miniJunSwitch, miniJunSwitch.isChecked)
         updateSwitchColor(roamSwitch, roamSwitch.isChecked)
 
@@ -32,16 +34,11 @@ class MiniJunSettingsActivity : AppCompatActivity() {
     }
 
     private fun updateSwitchColor(switch: Switch, isChecked: Boolean) {
-        if (isChecked) {
-            switch.thumbTint = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#2E7D32"))
-            switch.trackTint = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#1B5E20"))
-        } else {
-            switch.thumbTint = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#E53935"))
-            switch.trackTint = android.content.res.ColorStateList.valueOf(
-                android.graphics.Color.parseColor("#4A1010"))
-        }
+        val color = if (isChecked) Color.parseColor("#2E7D32")
+                    else Color.parseColor("#E53935")
+        switch.thumbTintList = ColorStateList.valueOf(color)
+        switch.trackTintList = ColorStateList.valueOf(
+            if (isChecked) Color.parseColor("#1B5E20")
+            else Color.parseColor("#4A1010"))
     }
 }
