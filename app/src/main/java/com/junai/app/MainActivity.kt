@@ -66,6 +66,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, TodoActivity::class.java))
         }
 
+        // Draw menu item
+        findViewById<TextView>(R.id.menuDraw).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, DrawActivity::class.java))
+        }
+
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages)
         recyclerView.adapter = chatAdapter
