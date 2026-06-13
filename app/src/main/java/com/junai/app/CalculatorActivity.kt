@@ -14,6 +14,10 @@ class CalculatorActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_calculator)
 
+        findViewById<Button>(R.id.backButton).setOnClickListener {
+            finish()
+        }
+
         val expressionText = findViewById<TextView>(R.id.expressionText)
         val resultText = findViewById<TextView>(R.id.resultText)
 
