@@ -78,6 +78,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, TranslatorActivity::class.java))
         }
 
+        // Reminder menu item
+        findViewById<TextView>(R.id.menuReminder).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, ReminderActivity::class.java))
+        }
+
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages)
         recyclerView.adapter = chatAdapter
