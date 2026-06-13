@@ -48,6 +48,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, MiniJunSettingsActivity::class.java))
         }
 
+        // Calculator menu item
+        findViewById<TextView>(R.id.menuCalculator).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, CalculatorActivity::class.java))
+        }
+
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages)
         recyclerView.adapter = chatAdapter
