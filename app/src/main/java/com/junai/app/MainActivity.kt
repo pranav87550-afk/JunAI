@@ -72,6 +72,12 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, DrawActivity::class.java))
         }
 
+        // Translator menu item
+        findViewById<TextView>(R.id.menuTranslator).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, TranslatorActivity::class.java))
+        }
+
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages)
         recyclerView.adapter = chatAdapter
