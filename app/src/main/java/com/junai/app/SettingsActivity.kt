@@ -5,19 +5,75 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.widget.Button
+import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONArray
+import java.util.Locale
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+
+    private lateinit var tts: TextToSpeech
+    private var ttsReady = false
+    private val PREFS = "settings_prefs"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
+        tts = TextToSpeech(this, this)
+
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+
+        // Voice Switch
+        val voiceSwitch = findViewById<Switch>(R.id.voiceSwitch)
+        voiceSwitch.isChecked = prefs.getBoolean("voice_enabled", false)
+        voiceSwitch.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("voice_enabled", isChecked).apply()
+        }
+
+        // Pitch SeekBar
+        val pitchSeekBar = findViewById<SeekBar>(R.id.pitchSeekBar)
+        pitchSeekBar.max = 100
+        pitchSeekBar.progress = (prefs.getFloat("voice_pitch", 1.0f) * 50).toInt()
+        pitchSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val pitch = progress / 50f
+                prefs.edit().putFloat("voice_pitch", pitch).apply()
+                if (ttsReady) tts.setPitch(pitch)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        // Speed SeekBar
+        val speedSeekBar = findViewById<SeekBar>(R.id.speedSeekBar)
+        speedSeekBar.max = 100
+        speedSeekBar.progress = (prefs.getFloat("voice_speed", 1.0f) * 50).toInt()
+        speedSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val speed = progress / 50f
+                prefs.edit().putFloat("voice_speed", speed).apply()
+                if (ttsReady) tts.setSpeechRate(speed)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        // Preview Voice
+        findViewById<Button>(R.id.btnPreviewVoice).setOnClickListener {
+            if (ttsReady) {
+                tts.speak("Hello! I am Jun, your AI assistant.", TextToSpeech.QUEUE_FLUSH, null, "PREVIEW")
+            } else {
+                Toast.makeText(this, "TTS not ready!", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // Clear chat
         findViewById<Button>(R.id.btnClearChat).setOnClickListener {
@@ -54,7 +110,7 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "Reminders cleared!", Toast.LENGTH_SHORT).show()
         }
 
-        // Clear unanswered questions
+        // Clear unanswered
         findViewById<Button>(R.id.btnClearUnanswered).setOnClickListener {
             getSharedPreferences("unanswered_prefs", MODE_PRIVATE).edit().clear().apply()
             Toast.makeText(this, "Unanswered questions cleared!", Toast.LENGTH_SHORT).show()
@@ -65,9 +121,7 @@ class SettingsActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle("Factory Reset")
                 .setMessage("Are you sure? All data will be deleted!")
-                .setPositiveButton("Yes") { _, _ ->
-                    factoryReset()
-                }
+                .setPositiveButton("Yes") { _, _ -> factoryReset() }
                 .setNegativeButton("No", null)
                 .show()
         }
@@ -76,6 +130,16 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnSaveChanges).setOnClickListener {
             Toast.makeText(this, "Changes saved!", Toast.LENGTH_SHORT).show()
             finish()
+        }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale.getDefault()
+            ttsReady = true
+            val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+            tts.setPitch(prefs.getFloat("voice_pitch", 1.0f))
+            tts.setSpeechRate(prefs.getFloat("voice_speed", 1.0f))
         }
     }
 
@@ -103,8 +167,15 @@ class SettingsActivity : AppCompatActivity() {
         getSharedPreferences("todo_prefs", MODE_PRIVATE).edit().clear().apply()
         getSharedPreferences("memory_prefs", MODE_PRIVATE).edit().clear().apply()
         getSharedPreferences("unanswered_prefs", MODE_PRIVATE).edit().clear().apply()
+        getSharedPreferences("settings_prefs", MODE_PRIVATE).edit().clear().apply()
         clearAllReminders()
         Toast.makeText(this, "Factory reset complete!", Toast.LENGTH_SHORT).show()
         finish()
+    }
+
+    override fun onDestroy() {
+        tts.stop()
+        tts.shutdown()
+        super.onDestroy()
     }
 }
