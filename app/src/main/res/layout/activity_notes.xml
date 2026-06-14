@@ -59,6 +59,7 @@
 
         <EditText
             android:id="@+id/searchNotes"
+            style="@style/WhiteHintEditText"
             android:layout_width="0dp"
             android:layout_height="44dp"
             android:layout_weight="1"
@@ -66,7 +67,6 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:hint="Search notes..."
-            android:hintTextColor="#888888"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:inputType="text"
