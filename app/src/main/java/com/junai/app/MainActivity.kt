@@ -172,11 +172,52 @@ class MainActivity : AppCompatActivity() {
 
     private fun openApp(appName: String) {
         val pm = packageManager
+        
+        // Package name se directly try karo
+        val packageMap = mapOf(
+            "youtube" to "com.google.android.youtube",
+            "instagram" to "com.instagram.android",
+            "whatsapp" to "com.whatsapp",
+            "facebook" to "com.facebook.katana",
+            "twitter" to "com.twitter.android",
+            "snapchat" to "com.snapchat.android",
+            "telegram" to "org.telegram.messenger",
+            "chrome" to "com.android.chrome",
+            "gmail" to "com.google.android.gm",
+            "maps" to "com.google.android.apps.maps",
+            "camera" to "com.android.camera2",
+            "photos" to "com.google.android.apps.photos",
+            "spotify" to "com.spotify.music",
+            "netflix" to "com.netflix.mediaclient",
+            "amazon" to "com.amazon.mShop.android.shopping",
+            "flipkart" to "com.flipkart.android",
+            "paytm" to "net.one97.paytm",
+            "gpay" to "com.google.android.apps.nbu.paisa.user",
+            "phonepe" to "com.phonepe.app",
+            "hotstar" to "in.startv.hotstar",
+            "settings" to "com.android.settings"
+        )
+
+        val lower = appName.lowercase().trim()
+        
+        // Pehle package map mein dhundo
+        val packageName = packageMap[lower]
+        if (packageName != null) {
+            val launchIntent = pm.getLaunchIntentForPackage(packageName)
+            if (launchIntent != null) {
+                startActivity(launchIntent)
+                chatAdapter.addMessage(ChatMessage("Opening $appName... ✅", isUser = false))
+                saveChat()
+                return
+            }
+        }
+
+        // Phir label se dhundo
         val intent = Intent(Intent.ACTION_MAIN, null)
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
         val apps = pm.queryIntentActivities(intent, 0)
         val found = apps.find {
-            it.loadLabel(pm).toString().lowercase().contains(appName.lowercase())
+            it.loadLabel(pm).toString().lowercase().contains(lower)
         }
         if (found != null) {
             val launchIntent = pm.getLaunchIntentForPackage(found.activityInfo.packageName)
@@ -191,6 +232,7 @@ class MainActivity : AppCompatActivity() {
         }
         saveChat()
     }
+
 
     private fun animateDot(dot: View, delay: Long) {
         val animator = ObjectAnimator.ofFloat(dot, "alpha", 0.2f, 1f)
