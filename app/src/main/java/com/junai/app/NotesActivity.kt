@@ -10,6 +10,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -20,14 +22,16 @@ class NotesActivity : AppCompatActivity() {
 
     private val notes = mutableListOf<Note>()
     private lateinit var adapter: RecyclerView.Adapter<*>
+    private val PREFS = "notes_prefs"
+    private val KEY = "notes_list"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_notes)
 
-        findViewById<Button>(R.id.backButton).setOnClickListener {
-            finish()
-        }
+        findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+
+        loadNotes()
 
         val recyclerView = findViewById<RecyclerView>(R.id.notesRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -46,6 +50,7 @@ class NotesActivity : AppCompatActivity() {
                     notes.removeAt(position)
                     notifyItemRemoved(position)
                     notifyItemRangeChanged(position, notes.size)
+                    saveNotes()
                 }
             }
 
@@ -54,16 +59,44 @@ class NotesActivity : AppCompatActivity() {
 
         recyclerView.adapter = adapter
 
-        // Add note button
         findViewById<ImageButton>(R.id.addNoteButton).setOnClickListener {
             val input = findViewById<EditText>(R.id.searchNotes)
             val title = input.text.toString().trim()
             if (title.isEmpty()) return@setOnClickListener
             val date = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date())
-            notes.add(0, Note("Note ${notes.size + 1}: \"$title\"", date))
+            val note = Note("Note ${notes.size + 1}: \"$title\"", date)
+            notes.add(0, note)
             adapter.notifyItemInserted(0)
             recyclerView.scrollToPosition(0)
             input.setText("")
+            saveNotes()
+        }
+    }
+
+    private fun saveNotes() {
+        val array = JSONArray()
+        notes.forEach {
+            val obj = JSONObject()
+            obj.put("title", it.title)
+            obj.put("date", it.date)
+            array.put(obj)
+        }
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY, array.toString()).apply()
+    }
+
+    private fun loadNotes() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val json = prefs.getString(KEY, "[]") ?: "[]"
+        val array = JSONArray(json)
+        for (i in 0 until array.length()) {
+            val obj = array.getJSONObject(i)
+            notes.add(Note(obj.getString("title"), obj.getString("date")))
+        }
+    }
+
+    companion object {
+        fun clearNotes(context: android.content.Context) {
+            context.getSharedPreferences("notes_prefs", MODE_PRIVATE).edit().clear().apply()
         }
     }
 }
