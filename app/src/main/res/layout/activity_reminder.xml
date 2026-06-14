@@ -76,6 +76,7 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:hint="Ex. Drink water"
+                android:hintTextColor="#888888"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:inputType="text"
