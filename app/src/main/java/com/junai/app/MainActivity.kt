@@ -233,6 +233,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         }
                     }, 1500)
                 }
+            }
+        }
 
     override fun onResume() {
         super.onResume()
