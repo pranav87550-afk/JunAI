@@ -172,20 +172,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun openApp(appName: String) {
         val pm = packageManager
-        val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = pm.queryIntentActivities(intent, 0)
         val found = apps.find {
-            pm.getApplicationLabel(it).toString().lowercase().contains(appName.lowercase())
+            it.loadLabel(pm).toString().lowercase().contains(appName.lowercase())
         }
         if (found != null) {
-            val launchIntent = pm.getLaunchIntentForPackage(found.packageName)
+            val launchIntent = pm.getLaunchIntentForPackage(found.activityInfo.packageName)
             if (launchIntent != null) {
                 startActivity(launchIntent)
-                chatAdapter.addMessage(ChatMessage("Opening ${pm.getApplicationLabel(found)}...", isUser = false))
+                chatAdapter.addMessage(ChatMessage("Opening ${found.loadLabel(pm)}... ✅", isUser = false))
             } else {
-                chatAdapter.addMessage(ChatMessage("Cannot open ${appName}.", isUser = false))
+                chatAdapter.addMessage(ChatMessage("Cannot open $appName.", isUser = false))
             }
         } else {
-            chatAdapter.addMessage(ChatMessage("App '$appName' not found on this phone.", isUser = false))
+            chatAdapter.addMessage(ChatMessage("App '$appName' not found.", isUser = false))
         }
         saveChat()
     }
