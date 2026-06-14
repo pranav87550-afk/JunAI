@@ -115,6 +115,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             startActivity(Intent(this, MusicHomeActivity::class.java))
         }
+        findViewById<TextView>(R.id.menuUnanswered).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, UnansweredActivity::class.java))
+        }
 
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages)
@@ -210,20 +214,25 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         dot2.clearAnimation()
                         dot3.clearAnimation()
 
-                        val response = "In development"
+                        // Check knowledge base first
+                        val knownAnswer = UnansweredActivity.getAnswer(this, text)
+                        val response = if (knownAnswer != null) {
+                            knownAnswer
+                        } else {
+                            // Add to unanswered questions
+                            UnansweredActivity.addQuestion(this, text)
+                            "I don't know the answer yet. I've added this to my Unanswered Questions. Please teach me!"
+                        }
+
                         chatAdapter.addMessage(ChatMessage(response, isUser = false))
                         recyclerView.scrollToPosition(messages.size - 1)
                         saveChat()
 
-                        // Speak if voice enabled
                         if (voiceEnabled && ttsReady) {
                             speakText(response)
                         }
                     }, 1500)
                 }
-            }
-        }
-    }
 
     override fun onResume() {
         super.onResume()
