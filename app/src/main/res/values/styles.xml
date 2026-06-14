@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WhiteTimePicker" parent="android:Widget.Material.TimePicker">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="colorAccent">#E53935</item>
+        <item name="android:colorControlNormal">#FFFFFF</item>
+    </style>
+</resources>
