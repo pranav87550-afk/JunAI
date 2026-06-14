@@ -3,16 +3,18 @@ package com.junai.app
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -20,8 +22,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var chatAdapter: ChatAdapter
@@ -29,11 +32,42 @@ class MainActivity : AppCompatActivity() {
     private val PREFS = "chat_prefs"
     private val KEY = "chat_list"
 
+    private lateinit var tts: TextToSpeech
+    private var ttsReady = false
+    private var voiceEnabled = false
+
+    private lateinit var speakingIndicator: LinearLayout
+    private lateinit var speakDot1: View
+    private lateinit var speakDot2: View
+    private lateinit var speakDot3: View
+
+    private val speechLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val data = result.data
+            val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            if (!results.isNullOrEmpty()) {
+                val spokenText = results[0]
+                val messageInput = findViewById<EditText>(R.id.messageInput)
+                messageInput.setText(spokenText)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        tts = TextToSpeech(this, this)
+        voiceEnabled = getSharedPreferences("settings_prefs", MODE_PRIVATE)
+            .getBoolean("voice_enabled", false)
+
         drawerLayout = findViewById(R.id.drawerLayout)
+        speakingIndicator = findViewById(R.id.speakingIndicator)
+        speakDot1 = findViewById(R.id.speakDot1)
+        speakDot2 = findViewById(R.id.speakDot2)
+        speakDot3 = findViewById(R.id.speakDot3)
 
         loadChat()
 
@@ -45,7 +79,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Menu items
         findViewById<TextView>(R.id.menuSettings).setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -92,6 +125,20 @@ class MainActivity : AppCompatActivity() {
         val dot2 = findViewById<View>(R.id.dot2)
         val dot3 = findViewById<View>(R.id.dot3)
 
+        // Mic button - Speech to Text
+        findViewById<ImageButton>(R.id.micButton).setOnClickListener {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to Jun...")
+            }
+            try {
+                speechLauncher.launch(intent)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(this, "Speech not supported!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+
         val messageInput = findViewById<EditText>(R.id.messageInput)
         findViewById<ImageButton>(R.id.sendButton).setOnClickListener {
             val text = messageInput.text.toString().trim()
@@ -102,7 +149,6 @@ class MainActivity : AppCompatActivity() {
             recyclerView.scrollToPosition(messages.size - 1)
             saveChat()
 
-            // Handle commands
             val lower = text.lowercase().trim()
             when {
                 lower == "clear chat" -> {
@@ -149,8 +195,6 @@ class MainActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
                 else -> {
-            
-                    // Normal AI response
                     typingIndicator.visibility = View.VISIBLE
                     animateDot(dot1, 0)
                     animateDot(dot2, 150)
@@ -161,13 +205,71 @@ class MainActivity : AppCompatActivity() {
                         dot1.clearAnimation()
                         dot2.clearAnimation()
                         dot3.clearAnimation()
-                        chatAdapter.addMessage(ChatMessage("In development", isUser = false))
+
+                        val response = "In development"
+                        chatAdapter.addMessage(ChatMessage(response, isUser = false))
                         recyclerView.scrollToPosition(messages.size - 1)
                         saveChat()
+
+                        // Speak if voice enabled
+                        if (voiceEnabled && ttsReady) {
+                            speakText(response)
+                        }
                     }, 1500)
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        voiceEnabled = getSharedPreferences("settings_prefs", MODE_PRIVATE)
+            .getBoolean("voice_enabled", false)
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale.getDefault()
+            ttsReady = true
+            updateTtsSettings()
+        }
+    }
+
+    private fun updateTtsSettings() {
+        val prefs = getSharedPreferences("settings_prefs", MODE_PRIVATE)
+        val pitch = prefs.getFloat("voice_pitch", 1.0f)
+        val speed = prefs.getFloat("voice_speed", 1.0f)
+        tts.setPitch(pitch)
+        tts.setSpeechRate(speed)
+    }
+
+    private fun speakText(text: String) {
+        if (!ttsReady) return
+        updateTtsSettings()
+
+        speakingIndicator.visibility = View.VISIBLE
+        animateDot(speakDot1, 0)
+        animateDot(speakDot2, 150)
+        animateDot(speakDot3, 300)
+
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {
+                runOnUiThread {
+                    speakingIndicator.visibility = View.GONE
+                    speakDot1.clearAnimation()
+                    speakDot2.clearAnimation()
+                    speakDot3.clearAnimation()
+                }
+            }
+            override fun onError(utteranceId: String?) {
+                runOnUiThread {
+                    speakingIndicator.visibility = View.GONE
+                }
+            }
+        })
+
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "JUN_TTS")
     }
 
     private fun openApp(appName: String) {
@@ -224,17 +326,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Fallback — Play Store se open karo
         try {
             val marketIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://search?q=$appName"))
             startActivity(marketIntent)
             chatAdapter.addMessage(ChatMessage("'$appName' not found. Opening Play Store... 🔍", isUser = false))
         } catch (e: Exception) {
-            chatAdapter.addMessage(ChatMessage("App '$appName' not found on this phone.", isUser = false))
+            chatAdapter.addMessage(ChatMessage("App '$appName' not found.", isUser = false))
         }
         saveChat()
     }
-
 
     private fun animateDot(dot: View, delay: Long) {
         val animator = ObjectAnimator.ofFloat(dot, "alpha", 0.2f, 1f)
@@ -269,6 +369,12 @@ class MainActivity : AppCompatActivity() {
                 obj.getLong("timestamp")
             ))
         }
+    }
+
+    override fun onDestroy() {
+        tts.stop()
+        tts.shutdown()
+        super.onDestroy()
     }
 
     override fun onBackPressed() {
