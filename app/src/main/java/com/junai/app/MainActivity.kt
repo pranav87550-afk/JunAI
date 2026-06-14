@@ -105,46 +105,51 @@ class MainActivity : AppCompatActivity() {
             // Handle commands
             val lower = text.lowercase().trim()
             when {
-                lower == "*clear chat" -> {
+                lower == "clear chat" -> {
                     messages.clear()
                     chatAdapter.notifyDataSetChanged()
                     saveChat()
                     return@setOnClickListener
                 }
-                lower == "*show notes" -> {
+                lower == "show notes" -> {
                     startActivity(Intent(this, NotesActivity::class.java))
                     return@setOnClickListener
                 }
-                lower == "*show todo" -> {
+                lower == "show todo" -> {
                     startActivity(Intent(this, TodoActivity::class.java))
                     return@setOnClickListener
                 }
-                lower == "*show translator" -> {
+                lower == "show translator" -> {
                     startActivity(Intent(this, TranslatorActivity::class.java))
                     return@setOnClickListener
                 }
-                lower == "*show settings" -> {
+                lower == "show settings" -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
                     return@setOnClickListener
                 }
-                lower == "*show mini jun settings" -> {
+                lower == "show mini jun settings" -> {
                     startActivity(Intent(this, MiniJunSettingsActivity::class.java))
                     return@setOnClickListener
                 }
-                lower == "*show calculator" -> {
+                lower == "show calculator" -> {
                     startActivity(Intent(this, CalculatorActivity::class.java))
                     return@setOnClickListener
                 }
-                lower == "*show draw" -> {
+                lower == "show draw" -> {
                     startActivity(Intent(this, DrawActivity::class.java))
                     return@setOnClickListener
                 }
-                lower.startsWith("*open ") -> {
-                    val appName = text.substring(6).trim()
+                lower == "show reminder" -> {
+                    startActivity(Intent(this, ReminderActivity::class.java))
+                    return@setOnClickListener
+                }
+                lower.startsWith("open ") -> {
+                    val appName = lower.substring(5).trim()
                     openApp(appName)
                     return@setOnClickListener
                 }
                 else -> {
+            
                     // Normal AI response
                     typingIndicator.visibility = View.VISIBLE
                     animateDot(dot1, 0)
