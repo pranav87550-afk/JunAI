@@ -171,9 +171,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openApp(appName: String) {
+        val lower = appName.lowercase().trim()
         val pm = packageManager
-        
-        // Package name se directly try karo
+
         val packageMap = mapOf(
             "youtube" to "com.google.android.youtube",
             "instagram" to "com.instagram.android",
@@ -183,76 +183,54 @@ class MainActivity : AppCompatActivity() {
             "telegram" to "org.telegram.messenger",
             "chrome" to "com.android.chrome",
             "gmail" to "com.google.android.gm",
-            "maps" to "com.google.android.apps.maps",
-            "photos" to "com.google.android.apps.photos",
-            "spotify" to "com.spotify.music",
             "netflix" to "com.netflix.mediaclient",
             "discord" to "com.discord",
             "amazon" to "com.amazon.mShop.android.shopping",
             "flipkart" to "com.flipkart.android",
             "paytm" to "net.one97.paytm",
             "gpay" to "com.google.android.apps.nbu.paisa.user",
-            "phonepe" to "com.phonepe.app",
             "hotstar" to "in.startv.hotstar",
             "jiohotstar" to "in.startv.hotstar",
-            "settings" to "com.android.settings",
-            "camera" to "com.oppo.camera",
-            "clock" to "com.oppo.alarmclock",
-            "calculator" to "com.oppo.calculator",
-            "contacts" to "com.oppo.contacts",
-            "messages" to "com.android.mms",
-            "phone" to "com.oppo.phone",
-            "playstore" to "com.android.vending",
-            "play store" to "com.android.vending",
             "drive" to "com.google.android.apps.docs",
             "meet" to "com.google.android.apps.tachyon",
             "threads" to "com.instagram.barcelona",
             "truecaller" to "com.truecaller",
-            "mx player" to "com.mxtech.videoplayer.ad",
-            "vidmate" to "com.vidmate.yt",
             "deepseek" to "com.deepseek.app",
             "chatgpt" to "com.openai.chatgpt",
             "perplexity" to "ai.perplexity.app.android",
-            "netflix" to "com.netflix.mediaclient",
             "meesho" to "com.meesho.supply",
-            "weather" to "com.oppo.weather",
-            "music" to "com.oppo.music",
-            "files" to "com.oppo.filemanager",
-            "my files" to "com.oppo.filemanager",
-            "claude" to "com.anthropic.claude"
+            "mx player" to "com.mxtech.videoplayer.ad",
+            "vidmate" to "com.vidmate.yt",
+            "claude" to "com.anthropic.claude",
+            "maps" to "com.google.android.apps.maps",
+            "photos" to "com.google.android.apps.photos",
+            "play store" to "com.android.vending",
+            "spotify" to "com.spotify.music"
         )
 
-        val lower = appName.lowercase().trim()
-        
-        // Pehle package map mein dhundo
         val packageName = packageMap[lower]
         if (packageName != null) {
-            val launchIntent = pm.getLaunchIntentForPackage(packageName)
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-                chatAdapter.addMessage(ChatMessage("Opening $appName... ✅", isUser = false))
-                saveChat()
-                return
+            try {
+                val launchIntent = pm.getLaunchIntentForPackage(packageName)
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(launchIntent)
+                    chatAdapter.addMessage(ChatMessage("Opening $appName ✅", isUser = false))
+                    saveChat()
+                    return
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
 
-        // Phir label se dhundo
-        val intent = Intent(Intent.ACTION_MAIN, null)
-        intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        val apps = pm.queryIntentActivities(intent, 0)
-        val found = apps.find {
-            it.loadLabel(pm).toString().lowercase().contains(lower)
-        }
-        if (found != null) {
-            val launchIntent = pm.getLaunchIntentForPackage(found.activityInfo.packageName)
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-                chatAdapter.addMessage(ChatMessage("Opening ${found.loadLabel(pm)}... ✅", isUser = false))
-            } else {
-                chatAdapter.addMessage(ChatMessage("Cannot open $appName.", isUser = false))
-            }
-        } else {
-            chatAdapter.addMessage(ChatMessage("App '$appName' not found.", isUser = false))
+        // Fallback — Play Store se open karo
+        try {
+            val marketIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://search?q=$appName"))
+            startActivity(marketIntent)
+            chatAdapter.addMessage(ChatMessage("'$appName' not found. Opening Play Store... 🔍", isUser = false))
+        } catch (e: Exception) {
+            chatAdapter.addMessage(ChatMessage("App '$appName' not found on this phone.", isUser = false))
         }
         saveChat()
     }
