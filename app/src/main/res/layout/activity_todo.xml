@@ -65,6 +65,7 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:hint="Add your new todo"
+            android:hintTextColor="#888888"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:inputType="text"
