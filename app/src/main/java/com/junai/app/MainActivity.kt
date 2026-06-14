@@ -197,6 +197,51 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     startActivity(Intent(this, ReminderActivity::class.java))
                     return@setOnClickListener
                 }
+                // Q=A Learning
+                lower.contains("=") -> {
+                    val parts = text.split("=", limit = 2)
+                    if (parts.size == 2) {
+                        val question = parts[0].trim()
+                        val answer = parts[1].trim()
+                        if (question.isNotEmpty() && answer.isNotEmpty()) {
+                            // Save to knowledge base
+                            val prefs = getSharedPreferences("knowledge_prefs", MODE_PRIVATE)
+                            val json = prefs.getString("knowledge_list", "{}") ?: "{}"
+                            val obj = org.json.JSONObject(json)
+                            obj.put(question.lowercase().trim(), answer)
+                            prefs.edit().putString("knowledge_list", obj.toString()).apply()
+
+                            val response = "Got it! I'll remember: \"$question\" = \"$answer\" ✅"
+                            chatAdapter.addMessage(ChatMessage(response, isUser = false))
+                            recyclerView.scrollToPosition(messages.size - 1)
+                            saveChat()
+                            if (voiceEnabled && ttsReady) speakText(response)
+                            return@setOnClickListener
+                        }
+                    }
+                    // Normal flow agar = sirf symbol hai
+                    typingIndicator.visibility = View.VISIBLE
+                    animateDot(dot1, 0)
+                    animateDot(dot2, 150)
+                    animateDot(dot3, 300)
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        typingIndicator.visibility = View.GONE
+                        dot1.clearAnimation()
+                        dot2.clearAnimation()
+                        dot3.clearAnimation()
+                        val knownAnswer = UnansweredActivity.getAnswer(this, text)
+                        val response = if (knownAnswer != null) knownAnswer
+                        else {
+                            UnansweredActivity.addQuestion(this, text)
+                            "I don't know the answer yet. I've added this to my Unanswered Questions. Please teach me!"
+                        }
+                        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+                        recyclerView.scrollToPosition(messages.size - 1)
+                        saveChat()
+                        if (voiceEnabled && ttsReady) speakText(response)
+                    }, 1500)
+                    return@setOnClickListener
+                }
                 lower.startsWith("open ") -> {
                     val appName = lower.substring(5).trim()
                     openApp(appName)
