@@ -1,6 +1,7 @@
 package com.junai.app
 
 import android.app.AlarmManager
+import android.provider.Settings
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -58,6 +59,15 @@ class ReminderActivity : AppCompatActivity() {
         }
 
         recyclerView.adapter = adapter
+
+        // Request exact alarm permission for Android 12+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                startActivity(intent)
+            }
+        }
 
         val timePicker = findViewById<TimePicker>(R.id.timePicker)
         timePicker.setIs24HourView(false)
