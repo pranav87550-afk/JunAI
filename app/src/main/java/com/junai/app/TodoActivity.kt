@@ -10,20 +10,23 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import org.json.JSONArray
 
 class TodoActivity : AppCompatActivity() {
 
     private val todos = mutableListOf<String>()
     private lateinit var adapter: RecyclerView.Adapter<*>
     private lateinit var pendingCount: TextView
+    private val PREFS = "todo_prefs"
+    private val KEY = "todo_list"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_todo)
 
-        findViewById<Button>(R.id.backButton).setOnClickListener {
-            finish()
-        }
+        findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+
+        loadTodos()
 
         pendingCount = findViewById(R.id.pendingCount)
         val recyclerView = findViewById<RecyclerView>(R.id.todoRecyclerView)
@@ -43,6 +46,7 @@ class TodoActivity : AppCompatActivity() {
                     notifyItemRemoved(position)
                     notifyItemRangeChanged(position, todos.size)
                     updateCount()
+                    saveTodos()
                 }
             }
 
@@ -60,6 +64,7 @@ class TodoActivity : AppCompatActivity() {
             recyclerView.scrollToPosition(0)
             input.setText("")
             updateCount()
+            saveTodos()
         }
 
         findViewById<Button>(R.id.clearAllButton).setOnClickListener {
@@ -67,6 +72,7 @@ class TodoActivity : AppCompatActivity() {
             todos.clear()
             adapter.notifyItemRangeRemoved(0, size)
             updateCount()
+            saveTodos()
         }
 
         updateCount()
@@ -74,5 +80,26 @@ class TodoActivity : AppCompatActivity() {
 
     private fun updateCount() {
         pendingCount.text = "You have ${todos.size} pending tasks"
+    }
+
+    private fun saveTodos() {
+        val array = JSONArray()
+        todos.forEach { array.put(it) }
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY, array.toString()).apply()
+    }
+
+    private fun loadTodos() {
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val json = prefs.getString(KEY, "[]") ?: "[]"
+        val array = JSONArray(json)
+        for (i in 0 until array.length()) {
+            todos.add(array.getString(i))
+        }
+    }
+
+    companion object {
+        fun clearTodos(context: android.content.Context) {
+            context.getSharedPreferences("todo_prefs", MODE_PRIVATE).edit().clear().apply()
+        }
     }
 }
