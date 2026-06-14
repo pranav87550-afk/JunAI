@@ -5,4 +5,9 @@
         <item name="colorAccent">#E53935</item>
         <item name="android:colorControlNormal">#FFFFFF</item>
     </style>
+
+    <style name="WhiteHintEditText" parent="Widget.AppCompat.EditText">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorHint">#888888</item>
+    </style>
 </resources>
