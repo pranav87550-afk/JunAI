@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0A0F"
+    android:orientation="vertical">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="16dp">
+
+        <Button
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="← Back"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:background="@drawable/rounded_dark_button"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Voice Commands"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"/>
+
+        <View
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1.5dp"
+        android:background="#E53935"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- App Commands -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📱 App Commands"
+                android:textColor="#E53935"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="open youtube → Opens YouTube\nopen instagram → Opens Instagram\nopen whatsapp → Opens WhatsApp\nopen [app name] → Opens any installed app"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:background="@drawable/settings_button"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Jun App Commands -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🤖 Jun App Commands"
+                android:textColor="#E53935"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="show notes → Opens Notes\nshow todo → Opens To-do Lists\nshow calculator → Opens Calculator\nshow translator → Opens Translator\nshow draw → Opens Draw\nshow reminder → Opens Reminder\nshow settings → Opens Settings\nshow mini jun settings → Opens Mini-Jun Settings"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:background="@drawable/settings_button"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Chat Commands -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💬 Chat Commands"
+                android:textColor="#E53935"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="clear chat → Clears all chat history"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:background="@drawable/settings_button"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Learning Commands -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🧠 Learning Commands"
+                android:textColor="#E53935"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="question=answer → Teaches Jun\nExample: What is your name=My name is JunAI\n\nJun will remember this answer permanently!"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:background="@drawable/settings_button"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Chat Buttons -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎛️ Chat Bubble Buttons"
+                android:textColor="#E53935"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📋 Copy → Copies Jun's response\n🎤 Speak → Jun speaks the response\n👍 Thumbs Up → Good answer\n👎 Thumbs Down → Wrong answer (saved to Negative Responses)"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:background="@drawable/settings_button"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Mic Button -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎙️ Mic Button"
+                android:textColor="#E53935"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Press mic button → Speak your message → Jun converts it to text automatically!"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:background="@drawable/settings_button"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
