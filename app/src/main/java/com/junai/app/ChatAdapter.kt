@@ -1,8 +1,12 @@
 package com.junai.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
@@ -15,8 +19,16 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class ChatAdapter(private val messages: MutableList<ChatMessage>) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+interface ChatActionListener {
+    fun onSpeak(text: String)
+    fun onThumbsUp(text: String, question: String)
+    fun onThumbsDown(text: String, question: String)
+}
+
+class ChatAdapter(
+    private val messages: MutableList<ChatMessage>,
+    private val actionListener: ChatActionListener? = null
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         const val TYPE_USER = 1
@@ -42,12 +54,41 @@ class ChatAdapter(private val messages: MutableList<ChatMessage>) :
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val message = messages[position]
         val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(message.timestamp))
+
         if (holder is UserViewHolder) {
             holder.messageText.text = message.text
             holder.timeText.text = time
         } else if (holder is JunViewHolder) {
             holder.messageText.text = message.text
             holder.timeText.text = time
+
+            // Get previous user message as question
+            val question = if (position > 0 && messages[position - 1].isUser)
+                messages[position - 1].text else ""
+
+            // Copy button
+            holder.copyButton.setOnClickListener {
+                val clipboard = it.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("JunAI", message.text))
+                android.widget.Toast.makeText(it.context, "Copied!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+
+            // Speak button
+            holder.speakButton.setOnClickListener {
+                actionListener?.onSpeak(message.text)
+            }
+
+            // Thumbs up
+            holder.thumbsUpButton.setOnClickListener {
+                actionListener?.onThumbsUp(message.text, question)
+                android.widget.Toast.makeText(it.context, "👍 Good answer!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+
+            // Thumbs down
+            holder.thumbsDownButton.setOnClickListener {
+                actionListener?.onThumbsDown(message.text, question)
+                android.widget.Toast.makeText(it.context, "👎 Noted!", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -61,10 +102,14 @@ class ChatAdapter(private val messages: MutableList<ChatMessage>) :
     class JunViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val messageText: TextView = view.findViewById(R.id.messageText)
         val timeText: TextView = view.findViewById(R.id.timeText)
+        val copyButton: ImageButton = view.findViewById(R.id.copyButton)
+        val speakButton: ImageButton = view.findViewById(R.id.speakButton)
+        val thumbsUpButton: ImageButton = view.findViewById(R.id.thumbsUpButton)
+        val thumbsDownButton: ImageButton = view.findViewById(R.id.thumbsDownButton)
     }
 
     fun addMessage(message: ChatMessage) {
         messages.add(message)
         notifyItemInserted(messages.size - 1)
     }
-    }
+}
