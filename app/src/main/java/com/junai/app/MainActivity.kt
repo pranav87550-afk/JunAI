@@ -127,6 +127,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             startActivity(Intent(this, VoiceCommandsActivity::class.java))
         }
+        findViewById<TextView>(R.id.menuDataManagement).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, DataManagementActivity::class.java))
+        }
 
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages, object : ChatActionListener {
