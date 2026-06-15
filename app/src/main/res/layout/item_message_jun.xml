@@ -37,4 +37,55 @@
             android:paddingTop="2dp"/>
 
     </LinearLayout>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="start"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
+
+        <ImageButton
+            android:id="@+id/copyButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/rounded_dark_button"
+            android:src="@drawable/ic_copy"
+            android:padding="6dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="Copy"/>
+
+        <ImageButton
+            android:id="@+id/speakButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/rounded_dark_button"
+            android:src="@drawable/ic_mic"
+            android:padding="6dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="Speak"/>
+
+        <ImageButton
+            android:id="@+id/thumbsUpButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/rounded_dark_button"
+            android:src="@drawable/ic_thumbs_up"
+            android:padding="6dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="Thumbs Up"/>
+
+        <ImageButton
+            android:id="@+id/thumbsDownButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/rounded_dark_button"
+            android:src="@drawable/ic_thumbs_down"
+            android:padding="6dp"
+            android:contentDescription="Thumbs Down"/>
+
+    </LinearLayout>
+
 </LinearLayout>
