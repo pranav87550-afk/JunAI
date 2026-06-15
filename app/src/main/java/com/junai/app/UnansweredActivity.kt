@@ -84,11 +84,12 @@ class UnansweredActivity : AppCompatActivity() {
             .setPositiveButton("Done") { _, _ ->
                 val answer = input.text.toString().trim()
                 if (answer.isNotEmpty()) {
-                    questions[position].put("answer", answer)
-                    adapter.notifyItemChanged(position)
-                    saveQuestions()
                     saveToKnowledge(question, answer)
-                    android.widget.Toast.makeText(this, "Answer saved! Jun will remember this.", android.widget.Toast.LENGTH_SHORT).show()
+                    questions.removeAt(position)
+                    adapter.notifyItemRemoved(position)
+                    adapter.notifyItemRangeChanged(position, questions.size)
+                    saveQuestions()
+                    android.widget.Toast.makeText(this, "Answer saved! Jun will remember this. ✅", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)
