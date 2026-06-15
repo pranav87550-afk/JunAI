@@ -121,27 +121,44 @@ class UnansweredActivity : AppCompatActivity() {
 
     companion object {
         fun addQuestion(context: android.content.Context, question: String) {
-            val prefs = context.getSharedPreferences("unanswered_prefs", android.content.Context.MODE_PRIVATE)
-            val json = prefs.getString("questions_list", "[]") ?: "[]"
-            val array = JSONArray(json)
-            
-            // Check if question already exists
-            for (i in 0 until array.length()) {
-                if (array.getJSONObject(i).getString("question").lowercase() == question.lowercase()) return
+            kotlinx.coroutines.GlobalScope.launch {
+                val prefs = context.getSharedPreferences("unanswered_prefs", android.content.Context.MODE_PRIVATE)
+                val json = prefs.getString("questions_list", "[]") ?: "[]"
+                val array = org.json.JSONArray(json)
+
+                for (i in 0 until array.length()) {
+                    if (array.getJSONObject(i).getString("question").lowercase() == question.lowercase()) return@launch
+                }
+
+                val obj = org.json.JSONObject()
+                obj.put("question", question)
+                obj.put("answer", "")
+                array.put(obj)
+                prefs.edit().putString("questions_list", array.toString()).apply()
             }
-            
-            val obj = JSONObject()
-            obj.put("question", question)
-            obj.put("answer", "")
-            array.put(obj)
-            prefs.edit().putString("questions_list", array.toString()).apply()
         }
 
         fun getAnswer(context: android.content.Context, question: String): String? {
-            val prefs = context.getSharedPreferences("knowledge_prefs", android.content.Context.MODE_PRIVATE)
-            val json = prefs.getString("knowledge_list", "{}") ?: "{}"
-            val obj = JSONObject(json)
-            return if (obj.has(question.lowercase().trim())) obj.getString(question.lowercase().trim()) else null
+            var answer: String? = null
+            val latch = java.util.concurrent.CountDownLatch(1)
+            kotlinx.coroutines.GlobalScope.launch {
+                try {
+                    answer = AppDatabase.getInstance(context)
+                        .knowledgeDao()
+                        .getAnswer(question.lowercase().trim())
+                } finally {
+                    latch.countDown()
+                }
+            }
+            latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
+            return answer
+        }
+
+        fun saveAnswer(context: android.content.Context, question: String, answer: String) {
+            kotlinx.coroutines.GlobalScope.launch {
+                AppDatabase.getInstance(context)
+                    .knowledgeDao()
+                    .insert(KnowledgeEntity(question.lowercase().trim(), answer))
+            }
         }
     }
-}
