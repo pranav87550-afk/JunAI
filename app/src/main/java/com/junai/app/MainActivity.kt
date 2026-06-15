@@ -23,6 +23,9 @@ import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -233,12 +236,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         val question = parts[0].trim()
                         val answer = parts[1].trim()
                         if (question.isNotEmpty() && answer.isNotEmpty()) {
-                            // Save to knowledge base
-                            val prefs = getSharedPreferences("knowledge_prefs", MODE_PRIVATE)
-                            val json = prefs.getString("knowledge_list", "{}") ?: "{}"
-                            val obj = org.json.JSONObject(json)
-                            obj.put(question.lowercase().trim(), answer)
-                            prefs.edit().putString("knowledge_list", obj.toString()).apply()
+                            // Save to Room DB
+                    CoroutineScope(Dispatchers.IO).launch {
+                        AppDatabase.getInstance(this@MainActivity)
+                            .knowledgeDao()
+                            .insert(KnowledgeEntity(question.lowercase().trim(), answer))
+                    }
 
                             val response = "Got it! I'll remember: \"$question\" = \"$answer\" ✅"
                             chatAdapter.addMessage(ChatMessage(response, isUser = false))
@@ -295,8 +298,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         dot2.clearAnimation()
                         dot3.clearAnimation()
 
-                        // Check knowledge base first
-                        val knownAnswer = UnansweredActivity.getAnswer(this, text)
+                        // Check Room DB first
+                        var knownAnswer: String? = null
+                        val latch = java.util.concurrent.CountDownLatch(1)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            knownAnswer = AppDatabase.getInstance(this@MainActivity)
+                                .knowledgeDao()
+                                .getAnswer(text.lowercase().trim())
+                            latch.countDown()
+                        }
+                        latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
                         val response = if (knownAnswer != null) {
                             knownAnswer
                         } else {
@@ -434,8 +445,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun searchAndRespond(query: String, recyclerView: RecyclerView) {
-        // Check stored first
-        val stored = UnansweredActivity.getAnswer(this, query)
+        // Check Room DB first
+        var stored: String? = null
+        val latch = java.util.concurrent.CountDownLatch(1)
+        CoroutineScope(Dispatchers.IO).launch {
+            stored = AppDatabase.getInstance(this@MainActivity)
+                .knowledgeDao()
+                .getAnswer(query.lowercase().trim())
+            latch.countDown()
+        }
+        latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
         if (stored != null) {
             chatAdapter.addMessage(ChatMessage(stored, isUser = false))
             recyclerView.scrollToPosition(messages.size - 1)
@@ -561,12 +580,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         dot2: android.view.View,
         dot3: android.view.View
     ) {
-        // Store in knowledge base
-        val prefs = getSharedPreferences("knowledge_prefs", MODE_PRIVATE)
-        val knowledgeJson = prefs.getString("knowledge_list", "{}") ?: "{}"
-        val knowledgeObj = org.json.JSONObject(knowledgeJson)
-        knowledgeObj.put(query.lowercase().trim(), answer)
-        prefs.edit().putString("knowledge_list", knowledgeObj.toString()).apply()
+        // Store in Room DB
+        CoroutineScope(Dispatchers.IO).launch {
+            AppDatabase.getInstance(this@MainActivity)
+                .knowledgeDao()
+                .insert(KnowledgeEntity(query.lowercase().trim(), answer))
+        }
 
         typingIndicator.visibility = android.view.View.GONE
         dot1.clearAnimation()
