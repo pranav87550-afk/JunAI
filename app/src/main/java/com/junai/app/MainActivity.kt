@@ -422,6 +422,89 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         saveChat()
     }
 
+    private fun searchAndRespond(query: String, recyclerView: RecyclerView) {
+        val stored = UnansweredActivity.getAnswer(this, "search:$query")
+        if (stored != null) {
+            chatAdapter.addMessage(ChatMessage(stored, isUser = false))
+            recyclerView.scrollToPosition(messages.size - 1)
+            saveChat()
+            if (voiceEnabled && ttsReady) speakText(stored)
+            return
+        }
+
+        val typingIndicator = findViewById<LinearLayout>(R.id.typingIndicator)
+        val dot1 = findViewById<View>(R.id.dot1)
+        val dot2 = findViewById<View>(R.id.dot2)
+        val dot3 = findViewById<View>(R.id.dot3)
+
+        typingIndicator.visibility = View.VISIBLE
+        animateDot(dot1, 0)
+        animateDot(dot2, 150)
+        animateDot(dot3, 300)
+
+        val url = "https://api.duckduckgo.com/?q=${java.net.URLEncoder.encode(query, "UTF-8")}&format=json&no_html=1&skip_disambig=1"
+
+        val client = okhttp3.OkHttpClient()
+        val request = okhttp3.Request.Builder().url(url).build()
+
+        client.newCall(request).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                runOnUiThread {
+                    typingIndicator.visibility = View.GONE
+                    dot1.clearAnimation()
+                    dot2.clearAnimation()
+                    dot3.clearAnimation()
+                    chatAdapter.addMessage(ChatMessage("No internet. Can't search right now.", isUser = false))
+                    recyclerView.scrollToPosition(messages.size - 1)
+                    saveChat()
+                }
+            }
+
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                val body = response.body?.string()
+                runOnUiThread {
+                    typingIndicator.visibility = View.GONE
+                    dot1.clearAnimation()
+                    dot2.clearAnimation()
+                    dot3.clearAnimation()
+                    try {
+                        val json = org.json.JSONObject(body ?: "")
+                        val abstract = json.optString("AbstractText", "")
+                        val answer = json.optString("Answer", "")
+                        val definition = json.optString("Definition", "")
+                        val related = try {
+                            json.optJSONArray("RelatedTopics")?.optJSONObject(0)?.optString("Text", "") ?: ""
+                        } catch (e: Exception) { "" }
+
+                        val finalAnswer = when {
+                            answer.isNotEmpty() -> answer
+                            abstract.isNotEmpty() -> abstract
+                            definition.isNotEmpty() -> definition
+                            related.isNotEmpty() -> related
+                            else -> "I couldn't find a clear answer for \"$query\". Try rephrasing!"
+                        }
+
+                        val prefs = getSharedPreferences("knowledge_prefs", MODE_PRIVATE)
+                        val knowledgeJson = prefs.getString("knowledge_list", "{}") ?: "{}"
+                        val knowledgeObj = org.json.JSONObject(knowledgeJson)
+                        knowledgeObj.put("search:${query.lowercase().trim()}", finalAnswer)
+                        prefs.edit().putString("knowledge_list", knowledgeObj.toString()).apply()
+
+                        chatAdapter.addMessage(ChatMessage(finalAnswer, isUser = false))
+                        recyclerView.scrollToPosition(messages.size - 1)
+                        saveChat()
+                        if (voiceEnabled && ttsReady) speakText(finalAnswer)
+
+                    } catch (e: Exception) {
+                        chatAdapter.addMessage(ChatMessage("Search failed. Try again!", isUser = false))
+                        recyclerView.scrollToPosition(messages.size - 1)
+                        saveChat()
+                    }
+                }
+            }
+        })
+    }
+
     private fun animateDot(dot: View, delay: Long) {
         val animator = ObjectAnimator.ofFloat(dot, "alpha", 0.2f, 1f)
         animator.duration = 400
