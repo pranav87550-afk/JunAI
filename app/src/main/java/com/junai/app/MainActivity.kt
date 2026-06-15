@@ -267,6 +267,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     }, 1500)
                     return@setOnClickListener
                 }
+                lower.startsWith("search ") -> {
+                    val query = text.substring(7).trim()
+                    if (query.isNotEmpty()) {
+                        searchAndRespond(query, recyclerView)
+                    }
+                    return@setOnClickListener
+                }
                 lower.startsWith("open ") -> {
                     val appName = lower.substring(5).trim()
                     openApp(appName)
