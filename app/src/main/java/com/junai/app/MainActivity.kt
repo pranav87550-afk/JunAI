@@ -119,9 +119,30 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             startActivity(Intent(this, UnansweredActivity::class.java))
         }
+        findViewById<TextView>(R.id.menuNegative).setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, NegativeResponsesActivity::class.java))
+        }
 
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
-        chatAdapter = ChatAdapter(messages)
+        chatAdapter = ChatAdapter(messages, object : ChatActionListener {
+            override fun onSpeak(text: String) {
+                if (ttsReady) speakText(text)
+            }
+
+            override fun onThumbsUp(text: String, question: String) {
+                // Boost confidence — already stored, just toast
+                android.widget.Toast.makeText(this@MainActivity, "👍 Great!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onThumbsDown(text: String, question: String) {
+                // Save to negative responses
+                if (question.isNotEmpty()) {
+                    NegativeResponsesActivity.addNegative(this@MainActivity, question, text)
+                    android.widget.Toast.makeText(this@MainActivity, "👎 Added to Negative Responses!", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        })
         recyclerView.adapter = chatAdapter
         recyclerView.layoutManager = LinearLayoutManager(this).also {
             it.stackFromEnd = true
