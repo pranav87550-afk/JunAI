@@ -54,6 +54,7 @@
         <activity android:name=".MusicPlayerActivity" android:exported="false"/>
         <activity android:name=".PlaylistActivity" android:exported="false"/>
         <activity android:name=".UnansweredActivity" android:exported="false"/>
+        <activity android:name=".NegativeResponsesActivity" android:exported="false"/>
 
         <receiver android:name=".AlarmReceiver" android:exported="true"/>
         <receiver android:name=".BootReceiver" android:exported="true">
