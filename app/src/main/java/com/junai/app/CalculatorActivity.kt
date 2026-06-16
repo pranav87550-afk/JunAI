@@ -14,9 +14,7 @@ class CalculatorActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_calculator)
 
-        findViewById<Button>(R.id.backButton).setOnClickListener {
-            finish()
-        }
+        findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
 
         val expressionText = findViewById<TextView>(R.id.expressionText)
         val resultText = findViewById<TextView>(R.id.resultText)
@@ -69,71 +67,85 @@ class CalculatorActivity : AppCompatActivity() {
                     .replace("×", "*")
                     .replace("−", "-")
                     .replace("%", "/100")
- private fun eval(expr: String): Double {
-    val tokens = expr.trim()
-    return object : Any() {
-        var pos = -1
-        var ch = 0
-
-        fun nextChar() {
-            ch = if (++pos < tokens.length) tokens[pos].code else -1
-        }
-
-        fun eat(charToEat: Int): Boolean {
-            while (ch == ' '.code) nextChar()
-            if (ch == charToEat) { nextChar(); return true }
-            return false
-        }
-
-        fun parse(): Double {
-            nextChar()
-            val x = parseExpression()
-            if (pos < tokens.length) throw RuntimeException("Unexpected: " + ch.toChar())
-            return x
-        }
-
-        fun parseExpression(): Double {
-            var x = parseTerm()
-            while (true) {
-                x = when {
-                    eat('+'.code) -> x + parseTerm()
-                    eat('-'.code) -> x - parseTerm()
-                    else -> return x
-                }
+                val res = eval(expr)
+                result = if (res.isInfinite() || res.isNaN()) "Error"
+                         else if (res % 1.0 == 0.0 && res < Long.MAX_VALUE) res.toLong().toString()
+                         else "%.10g".format(res).trimEnd('0').trimEnd('.')
+                expression = result
+                updateDisplay()
+            } catch (e: Exception) {
+                result = "Error"
+                updateDisplay()
             }
         }
+    }
 
-        fun parseTerm(): Double {
-            var x = parseFactor()
-            while (true) {
-                x = when {
-                    eat('*'.code) -> x * parseFactor()
-                    eat('/'.code) -> {
-                        val divisor = parseFactor()
-                        if (divisor == 0.0) throw RuntimeException("Division by zero")
-                        x / divisor
+    private fun eval(expr: String): Double {
+        val tokens = expr.trim()
+        return object : Any() {
+            var pos = -1
+            var ch = 0
+
+            fun nextChar() {
+                ch = if (++pos < tokens.length) tokens[pos].code else -1
+            }
+
+            fun eat(charToEat: Int): Boolean {
+                while (ch == ' '.code) nextChar()
+                if (ch == charToEat) { nextChar(); return true }
+                return false
+            }
+
+            fun parse(): Double {
+                nextChar()
+                val x = parseExpression()
+                if (pos < tokens.length) throw RuntimeException("Unexpected: " + ch.toChar())
+                return x
+            }
+
+            fun parseExpression(): Double {
+                var x = parseTerm()
+                while (true) {
+                    x = when {
+                        eat('+'.code) -> x + parseTerm()
+                        eat('-'.code) -> x - parseTerm()
+                        else -> return x
                     }
-                    else -> return x
                 }
             }
-        }
 
-        fun parseFactor(): Double {
-            if (eat('+'.code)) return parseFactor()
-            if (eat('-'.code)) return -parseFactor()
-            var x: Double
-            val startPos = pos
-            if (eat('('.code)) {
-                x = parseExpression()
-                eat(')'.code)
-            } else if (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) {
-                while (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) nextChar()
-                x = tokens.substring(startPos + 1, pos).toBigDecimal().toDouble()
-            } else {
-                throw RuntimeException("Unexpected: " + ch.toChar())
+            fun parseTerm(): Double {
+                var x = parseFactor()
+                while (true) {
+                    x = when {
+                        eat('*'.code) -> x * parseFactor()
+                        eat('/'.code) -> {
+                            val divisor = parseFactor()
+                            if (divisor == 0.0) throw RuntimeException("Division by zero")
+                            x / divisor
+                        }
+                        else -> return x
+                    }
+                }
             }
-            if (eat('^'.code)) x = Math.pow(x, parseFactor())
-            return x
-        }
-    }.parse()
-         }
+
+            fun parseFactor(): Double {
+                if (eat('+'.code)) return parseFactor()
+                if (eat('-'.code)) return -parseFactor()
+                var x: Double
+                val startPos = pos
+                if (eat('('.code)) {
+                    x = parseExpression()
+                    eat(')'.code)
+                } else if (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) {
+                    while (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) nextChar()
+                    x = tokens.substring(startPos + 1, pos).toBigDecimal().toDouble()
+                } else {
+                    throw RuntimeException("Unexpected: " + ch.toChar())
+                }
+                if (eat('^'.code)) x = Math.pow(x, parseFactor())
+                return x
+            }
+        }.parse()
+    }
+}
