@@ -7,5 +7,9 @@ import androidx.room.PrimaryKey
 data class KnowledgeEntity(
     @PrimaryKey
     val question: String,
-    val answer: String
+    val answer: String,
+    val aliases: String = "",
+    val category: String = "",
+    val timesAsked: Int = 0,
+    val confidence: Float = 1.0f
 )
