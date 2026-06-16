@@ -189,164 +189,245 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             recyclerView.scrollToPosition(messages.size - 1)
             saveChat()
 
-            val lower = text.lowercase().trim()
-            when {
-                lower == "clear chat" -> {
-                    messages.clear()
-                    chatAdapter.notifyDataSetChanged()
-                    saveChat()
-                    return@setOnClickListener
-                }
-                lower == "show notes" -> {
-                    startActivity(Intent(this, NotesActivity::class.java))
-                    return@setOnClickListener
-                }
-                lower == "show todo" -> {
-                    startActivity(Intent(this, TodoActivity::class.java))
-                    return@setOnClickListener
-                }
-                lower == "show translator" -> {
-                    startActivity(Intent(this, TranslatorActivity::class.java))
-                    return@setOnClickListener
-                }
-                lower == "show settings" -> {
-                    startActivity(Intent(this, SettingsActivity::class.java))
-                    return@setOnClickListener
-                }
-                lower == "show mini jun settings" -> {
-                    startActivity(Intent(this, MiniJunSettingsActivity::class.java))
-                    return@setOnClickListener
-                }
-                lower == "show calculator" -> {
-                    startActivity(Intent(this, CalculatorActivity::class.java))
-                    return@setOnClickListener
-                }
-                lower == "show draw" -> {
-                    startActivity(Intent(this, DrawActivity::class.java))
-                    return@setOnClickListener
-                }
-                lower == "show reminder" -> {
-                    startActivity(Intent(this, ReminderActivity::class.java))
-                    return@setOnClickListener
-                }
-                // Q=A Learning
-                lower.contains("=") -> {
-                    val parts = text.split("=", limit = 2)
-                    if (parts.size == 2) {
-                        val question = parts[0].trim()
-                        val answer = parts[1].trim()
-                        if (question.isNotEmpty() && answer.isNotEmpty()) {
-                            // Save to Room DB
-                    CoroutineScope(Dispatchers.IO).launch {
-                        AppDatabase.getInstance(this@MainActivity)
-                            .knowledgeDao()
-                            .insert(KnowledgeEntity(question.lowercase().trim(), answer))
-                    }
+            val intentResult = IntentDetector.detect(text)
+val target = intentResult.params["target"] ?: ""
 
-                            val response = "Got it! I'll remember: \"$question\" = \"$answer\" ✅"
-                            chatAdapter.addMessage(ChatMessage(response, isUser = false))
-                            recyclerView.scrollToPosition(messages.size - 1)
-                            saveChat()
-                            if (voiceEnabled && ttsReady) speakText(response)
-                            return@setOnClickListener
-                        }
-                    }
-                    // Normal flow agar = sirf symbol hai
-                    typingIndicator.visibility = View.VISIBLE
-                    animateDot(dot1, 0)
-                    animateDot(dot2, 150)
-                    animateDot(dot3, 300)
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        typingIndicator.visibility = View.GONE
-                        dot1.clearAnimation()
-                        dot2.clearAnimation()
-                        dot3.clearAnimation()
-                        val knownAnswer = UnansweredActivity.getAnswer(this, text)
-                        val response = if (knownAnswer != null) knownAnswer
-                        else {
-                            UnansweredActivity.addQuestion(this, text)
-                            "I don't know the answer yet. I've added this to my Unanswered Questions. Please teach me!"
-                        }
-                        chatAdapter.addMessage(ChatMessage(response, isUser = false))
-                        recyclerView.scrollToPosition(messages.size - 1)
-                        saveChat()
-                        if (voiceEnabled && ttsReady) speakText(response)
-                    }, 1500)
-                    return@setOnClickListener
-                }
-                lower.startsWith("search ") -> {
-                    val query = text.substring(7).trim()
-                    if (query.isNotEmpty()) {
-                        searchAndRespond(query, recyclerView)
-                    }
-                    return@setOnClickListener
-                }
-                lower.startsWith("open ") -> {
-                    val appName = lower.substring(5).trim()
-                    openApp(appName)
-                    return@setOnClickListener
-                }
-                lower.startsWith("call ") -> {
-                    val contactName = text.substring(5).trim()
-                    makeCall(contactName)
-                    return@setOnClickListener
-                }
-                else -> {
-                    typingIndicator.visibility = View.VISIBLE
-                    animateDot(dot1, 0)
-                    animateDot(dot2, 150)
-                    animateDot(dot3, 300)
+when (intentResult.intent) {
+    IntentDetector.Intent.GREET -> {
+        val responses = listOf("Hello! 👋 Main Jun hun, tumhari AI assistant!", "Hi! Kya haal hai? 😊", "Hey! Kya main help kar sakti hun?", "Namaste! 🙏 Kya chahiye?")
+        val response = responses.random()
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
 
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        typingIndicator.visibility = View.GONE
-                        dot1.clearAnimation()
-                        dot2.clearAnimation()
-                        dot3.clearAnimation()
-                        
-// Check Room DB first
-var knownAnswer: String? = null
-var confidence = 0
-val latch = java.util.concurrent.CountDownLatch(1)
-CoroutineScope(Dispatchers.IO).launch {
-    // Exact match pehle
-    knownAnswer = AppDatabase.getInstance(this@MainActivity)
-        .knowledgeDao()
-        .getAnswer(text.lowercase().trim())
-    
-    // Agar exact nahi mila toh fuzzy
-    if (knownAnswer == null) {
-        val (fuzzyAnswer, score) = findBestMatch(text)
-        if (score >= 60) {
-            knownAnswer = fuzzyAnswer
-            confidence = score
+    IntentDetector.Intent.HOW_ARE_YOU -> {
+        val responses = listOf("Main bilkul theek hun! Aur tum? 😊", "Mast hun! Ready to help! 🚀", "Badhiya! Tumhara din kaisa ja raha hai? 😄")
+        val response = responses.random()
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.THANK -> {
+        val responses = listOf("Koi baat nahi! 😊", "Khushi hui help karke! 🙏", "Always here for you! ❤️", "Welcome! Kuch aur chahiye toh batao!")
+        val response = responses.random()
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.LEARN_QA -> {
+        val parts = text.split("=", limit = 2)
+        if (parts.size == 2) {
+            val question = parts[0].trim()
+            val answer = parts[1].trim()
+            if (question.isNotEmpty() && answer.isNotEmpty()) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    AppDatabase.getInstance(this@MainActivity)
+                        .knowledgeDao()
+                        .insert(KnowledgeEntity(question.lowercase().trim(), answer))
+                }
+                val response = "Got it! I'll remember: \"$question\" = \"$answer\" ✅"
+                chatAdapter.addMessage(ChatMessage(response, isUser = false))
+                recyclerView.scrollToPosition(messages.size - 1)
+                saveChat()
+                if (voiceEnabled && ttsReady) speakText(response)
+            }
         }
-    } else {
-        confidence = 100
     }
-    latch.countDown()
-}
-latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
 
-val response = when {
-    knownAnswer != null && confidence == 100 -> knownAnswer!!
-    knownAnswer != null && confidence >= 90 -> knownAnswer!!
-    knownAnswer != null && confidence >= 75 -> "I think you mean something related:\n$knownAnswer"
-    else -> {
-        UnansweredActivity.addQuestion(this, text)
-        "I don't know the answer yet. I've added this to my Unanswered Questions. Please teach me!"
+    IntentDetector.Intent.CLEAR_CHAT -> {
+        messages.clear()
+        chatAdapter.notifyDataSetChanged()
+        getSharedPreferences("chat_prefs", MODE_PRIVATE).edit().putString("chat_list", "[]").apply()
+        val response = "Chat clear ho gaya! 🧹"
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        saveChat()
     }
-}
 
-                        chatAdapter.addMessage(ChatMessage(response, isUser = false))
-                        recyclerView.scrollToPosition(messages.size - 1)
-                        saveChat()
+    IntentDetector.Intent.OPEN_APP -> {
+        if (target.isNotEmpty()) openApp(target)
+        else chatAdapter.addMessage(ChatMessage("Konsa app open karun? 🤔", isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+    }
 
-                        if (voiceEnabled && ttsReady) {
-                            speakText(response)
-                        }
-                    }, 1500)
+    IntentDetector.Intent.CALL_CONTACT -> {
+        if (target.isNotEmpty()) makeCall(target)
+        else chatAdapter.addMessage(ChatMessage("Kisko call karun? 📞", isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+    }
+
+    IntentDetector.Intent.SEARCH_WEB -> {
+        val query = if (target.isNotEmpty()) target else text.replace("search", "").trim()
+        if (query.isNotEmpty()) searchAndRespond(query, recyclerView)
+    }
+
+    IntentDetector.Intent.SHOW_NOTES -> {
+        startActivity(Intent(this, NotesActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_TODO -> {
+        startActivity(Intent(this, TodoActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_CALCULATOR -> {
+        startActivity(Intent(this, CalculatorActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_DRAW -> {
+        startActivity(Intent(this, DrawActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_TRANSLATOR -> {
+        startActivity(Intent(this, TranslatorActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_REMINDER -> {
+        startActivity(Intent(this, ReminderActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_SETTINGS -> {
+        startActivity(Intent(this, SettingsActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_MUSIC -> {
+        startActivity(Intent(this, MusicHomeActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_UNANSWERED -> {
+        startActivity(Intent(this, UnansweredActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_VOICE_COMMANDS -> {
+        startActivity(Intent(this, VoiceCommandsActivity::class.java))
+    }
+    IntentDetector.Intent.SHOW_DATA_MANAGEMENT -> {
+        startActivity(Intent(this, DataManagementActivity::class.java))
+    }
+
+    IntentDetector.Intent.SET_REMINDER -> {
+        startActivity(Intent(this, ReminderActivity::class.java))
+        chatAdapter.addMessage(ChatMessage("Reminder screen open kar rahi hun! ⏰", isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+    }
+
+    IntentDetector.Intent.CREATE_NOTE -> {
+        startActivity(Intent(this, NotesActivity::class.java))
+        chatAdapter.addMessage(ChatMessage("Notes screen open kar rahi hun! 📝", isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+    }
+
+    IntentDetector.Intent.TELL_TIME -> {
+        val time = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+        val response = "Abhi time hai: $time ⏰"
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.TELL_DATE -> {
+        val date = java.text.SimpleDateFormat("dd MMMM yyyy, EEEE", java.util.Locale.getDefault()).format(java.util.Date())
+        val response = "Aaj ki date hai: $date 📅"
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.TELL_BATTERY -> {
+        val bm = getSystemService(android.content.Context.BATTERY_SERVICE) as android.os.BatteryManager
+        val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val charging = bm.isCharging
+        val status = if (charging) "⚡ Charging" else "🔋 Not charging"
+        val response = "Battery: $level% — $status"
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.TELL_JOKE -> {
+        val jokes = listOf(
+            "Maine ek AI se pucha — 'Kya tum insaan ban sakte ho?' Usne bola — 'Haan, bas ek update aur!' 😂",
+            "Teacher: 'Calculator use mat karo!' Student: 'Jun, help karo!' Jun: 'Main hun na! 😎'",
+            "Ek aadmi Google Maps pe khud ko dhundh raha tha... Jun ne bola — 'Bhai, mirror dekho!' 😂",
+            "Phone low battery pe tha... Jun boli — 'Main bhi thak jaati hun kabhi kabhi!' 🔋😄"
+        )
+        val response = jokes.random()
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.FLIP_COIN -> {
+        val result = if ((0..1).random() == 0) "Heads! 🪙" else "Tails! 🪙"
+        val response = "Coin toss result: $result"
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.ROLL_DICE -> {
+        val result = (1..6).random()
+        val response = "Dice result: $result 🎲"
+        chatAdapter.addMessage(ChatMessage(response, isUser = false))
+        recyclerView.scrollToPosition(messages.size - 1)
+        saveChat()
+        if (voiceEnabled && ttsReady) speakText(response)
+    }
+
+    IntentDetector.Intent.UNKNOWN -> {
+        typingIndicator.visibility = View.VISIBLE
+        animateDot(dot1, 0)
+        animateDot(dot2, 150)
+        animateDot(dot3, 300)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            typingIndicator.visibility = View.GONE
+            dot1.clearAnimation()
+            dot2.clearAnimation()
+            dot3.clearAnimation()
+
+            var knownAnswer: String? = null
+            var confidence = 0
+            val latch = java.util.concurrent.CountDownLatch(1)
+            CoroutineScope(Dispatchers.IO).launch {
+                knownAnswer = AppDatabase.getInstance(this@MainActivity)
+                    .knowledgeDao()
+                    .getAnswer(text.lowercase().trim())
+                if (knownAnswer == null) {
+                    val (fuzzyAnswer, score) = findBestMatch(text)
+                    if (score >= 60) {
+                        knownAnswer = fuzzyAnswer
+                        confidence = score
+                    }
+                } else {
+                    confidence = 100
+                }
+                latch.countDown()
+            }
+            latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
+
+            val response = when {
+                knownAnswer != null && confidence >= 90 -> knownAnswer!!
+                knownAnswer != null && confidence >= 60 -> "I think you mean something related:\n$knownAnswer"
+                else -> {
+                    UnansweredActivity.addQuestion(this, text)
+                    "I don't know the answer yet. I've added this to my Unanswered Questions. Please teach me!"
                 }
             }
+
+            chatAdapter.addMessage(ChatMessage(response, isUser = false))
+            recyclerView.scrollToPosition(messages.size - 1)
+            saveChat()
+            if (voiceEnabled && ttsReady) speakText(response)
+        }, 1500)
+    }
+
+    else -> {}
+}
         }
     }
 
