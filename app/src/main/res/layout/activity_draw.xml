@@ -59,48 +59,61 @@
         android:layout_weight="1"
         android:background="#FFFFFF"/>
 
-    <!-- Bottom Bar -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:background="#111116">
+    <!-- Size Control Bar -->
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:background="#111116">
 
-        <ImageButton
-            android:id="@+id/addStrokeButton"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="@drawable/rounded_dark_button"
-            android:src="@drawable/ic_add"
-            android:padding="8dp"
-            android:contentDescription="Add"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Size"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:layout_marginEnd="8dp"/>
 
-        <!-- Colors -->
-        <View android:id="@+id/colorRed" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_red" android:layout_marginStart="8dp"/>
-        <View android:id="@+id/colorOrange" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_orange" android:layout_marginStart="8dp"/>
-        <View android:id="@+id/colorWhite" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_white" android:layout_marginStart="8dp"/>
-        <View android:id="@+id/colorBlack" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_black" android:layout_marginStart="8dp"/>
-        <View android:id="@+id/colorNavy" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_navy" android:layout_marginStart="8dp"/>
-        <View android:id="@+id/colorBlue" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_blue" android:layout_marginStart="8dp"/>
-        <View android:id="@+id/colorTeal" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_teal" android:layout_marginStart="8dp"/>
+    <SeekBar
+        android:id="@+id/brushSizeSeekBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:max="100"
+        android:progress="10"
+        android:progressTint="#E53935"
+        android:thumbTint="#E53935"/>
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"/>
+</LinearLayout>
 
-        <ImageButton
-            android:id="@+id/eraserButton"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="@drawable/rounded_dark_button"
-            android:src="@drawable/ic_delete"
-            android:padding="8dp"
-            android:contentDescription="Eraser"/>
+<!-- Bottom Bar -->
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:background="#111116">
 
-    </LinearLayout>
+    <ImageButton
+        android:id="@+id/eraserButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/rounded_dark_button"
+        android:src="@drawable/ic_add"
+        android:padding="8dp"
+        android:contentDescription="Eraser"/>
+
+    <View android:id="@+id/colorRed" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_red" android:layout_marginStart="8dp"/>
+    <View android:id="@+id/colorOrange" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_orange" android:layout_marginStart="8dp"/>
+    <View android:id="@+id/colorWhite" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_white" android:layout_marginStart="8dp"/>
+    <View android:id="@+id/colorBlack" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_black" android:layout_marginStart="8dp"/>
+    <View android:id="@+id/colorNavy" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_navy" android:layout_marginStart="8dp"/>
+    <View android:id="@+id/colorBlue" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_blue" android:layout_marginStart="8dp"/>
+    <View android:id="@+id/colorTeal" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_teal" android:layout_marginStart="8dp"/>
 
 </LinearLayout>
