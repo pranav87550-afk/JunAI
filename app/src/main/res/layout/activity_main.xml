@@ -316,6 +316,8 @@
             <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
             <TextView android:id="@+id/menuDataManagement" android:layout_width="match_parent" android:layout_height="48dp" android:text="📊  Data Management" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
             <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+            <TextView android:id="@+id/menuLearningCenter" android:layout_width="match_parent" android:layout_height="48dp" android:text="🧠  Learning Center" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
+            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
 
         </LinearLayout>
     </ScrollView>
