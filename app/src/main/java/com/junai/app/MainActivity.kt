@@ -316,7 +316,7 @@ CoroutineScope(Dispatchers.IO).launch {
     // Agar exact nahi mila toh fuzzy
     if (knownAnswer == null) {
         val (fuzzyAnswer, score) = findBestMatch(text)
-        if (score >= 75) {
+        if (score >= 60) {
             knownAnswer = fuzzyAnswer
             confidence = score
         }
@@ -529,17 +529,24 @@ if (matched != null) {
     private fun fuzzyMatch(query: String, stored: String): Int {
     val q = query.lowercase().trim()
     val s = stored.lowercase().trim()
-    
+
     if (q == s) return 100
     if (s.contains(q) || q.contains(s)) return 90
-    
+
     val qWords = q.split(" ").toSet()
     val sWords = s.split(" ").toSet()
     val common = qWords.intersect(sWords).size
     val total = qWords.union(sWords).size
-    
-    return if (total == 0) 0 else (common * 100 / total)
-}
+    val wordScore = if (total == 0) 0 else (common * 100 / total)
+
+    // Keyword overlap bonus — agar important words match ho
+    val importantWords = setOf("naam", "name", "kya", "kaisa", "batao", "bata", "tera", "tumhara", "your")
+    val qImportant = qWords.intersect(importantWords)
+    val sImportant = sWords.intersect(importantWords)
+    val keywordScore = if (qImportant.intersect(sImportant).isNotEmpty()) 20 else 0
+
+    return (wordScore + keywordScore).coerceAtMost(100)
+    }
 
 private suspend fun findBestMatch(query: String): Pair<String?, Int> {
     val all = AppDatabase.getInstance(this).knowledgeDao().getAll()
