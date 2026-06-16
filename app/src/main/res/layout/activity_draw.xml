@@ -117,3 +117,4 @@
     <View android:id="@+id/colorTeal" android:layout_width="32dp" android:layout_height="32dp" android:background="@drawable/color_circle_teal" android:layout_marginStart="8dp"/>
 
 </LinearLayout>
+</LinearLayout>
