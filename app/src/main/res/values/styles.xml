@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="WhiteTimePicker" parent="android:Widget.Material.TimePicker">
+    <style name="WhiteTimePicker" parent="Theme.AppCompat.Light">
     <item name="android:textColor">#FFFFFF</item>
+    <item name="android:textColorPrimary">#FFFFFF</item>
+    <item name="android:textColorSecondary">#FFFFFF</item>
     <item name="colorAccent">#E53935</item>
     <item name="android:colorControlNormal">#FFFFFF</item>
-    <item name="android:timePickerMode">spinner</item>
+    <item name="android:colorControlActivated">#E53935</item>
     <item name="android:background">#0A0A0F</item>
 </style>
 
