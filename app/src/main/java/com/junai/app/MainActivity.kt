@@ -286,6 +286,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     openApp(appName)
                     return@setOnClickListener
                 }
+                lower.startsWith("call ") -> {
+                    val contactName = text.substring(5).trim()
+                    makeCall(contactName)
+                    return@setOnClickListener
+                }
                 else -> {
                     typingIndicator.visibility = View.VISIBLE
                     animateDot(dot1, 0)
@@ -379,6 +384,51 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
 
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "JUN_TTS")
+    }
+
+    private fun makeCall(name: String) {
+    val permission = android.Manifest.permission.CALL_PHONE
+    val contactPermission = android.Manifest.permission.READ_CONTACTS
+    
+    if (androidx.core.content.ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED ||
+        androidx.core.content.ContextCompat.checkSelfPermission(this, contactPermission) != PackageManager.PERMISSION_GRANTED) {
+        androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(permission, contactPermission), 200)
+        chatAdapter.addMessage(ChatMessage("Please grant call & contacts permission!", isUser = false))
+        saveChat()
+        return
+    }
+
+    val cursor = contentResolver.query(
+        android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        arrayOf(
+            android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+            android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER
+        ),
+        null, null, null
+    )
+
+    var number: String? = null
+    cursor?.use {
+        while (it.moveToNext()) {
+            val contactName = it.getString(0) ?: continue
+            if (contactName.lowercase().contains(name.lowercase())) {
+                number = it.getString(1)
+                break
+            }
+        }
+    }
+
+    if (number != null) {
+        chatAdapter.addMessage(ChatMessage("Calling $name... 📞", isUser = false))
+        saveChat()
+        val callIntent = Intent(Intent.ACTION_CALL).apply {
+            data = android.net.Uri.parse("tel:$number")
+        }
+        startActivity(callIntent)
+    } else {
+        chatAdapter.addMessage(ChatMessage("Contact '$name' nahi mila! 😕", isUser = false))
+        saveChat()
+    }
     }
 
     private fun openApp(appName: String) {
