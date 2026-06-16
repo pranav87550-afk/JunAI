@@ -157,7 +157,7 @@ class MusicHomeActivity : AppCompatActivity() {
             setPadding(32, 24, 32, 24)
         }
 
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(this, R.style.DarkDialog)
             .setTitle("New Playlist")
             .setView(input)
             .setPositiveButton("Create") { _, _ ->
