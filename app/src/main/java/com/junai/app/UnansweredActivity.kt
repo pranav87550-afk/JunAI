@@ -13,6 +13,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class UnansweredActivity : AppCompatActivity() {
 
@@ -97,11 +100,11 @@ class UnansweredActivity : AppCompatActivity() {
     }
 
     private fun saveToKnowledge(question: String, answer: String) {
-        val prefs = getSharedPreferences("knowledge_prefs", MODE_PRIVATE)
-        val json = prefs.getString("knowledge_list", "{}") ?: "{}"
-        val obj = JSONObject(json)
-        obj.put(question.lowercase().trim(), answer)
-        prefs.edit().putString("knowledge_list", obj.toString()).apply()
+        CoroutineScope(Dispatchers.IO).launch {
+            AppDatabase.getInstance(this@UnansweredActivity)
+                .knowledgeDao()
+                .insert(KnowledgeEntity(question.lowercase().trim(), answer))
+        }
     }
 
     private fun saveQuestions() {
