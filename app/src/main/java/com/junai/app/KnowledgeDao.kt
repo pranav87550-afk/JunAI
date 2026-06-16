@@ -17,6 +17,9 @@ interface KnowledgeDao {
     @Query("SELECT answer FROM knowledge WHERE question = :question LIMIT 1")
     suspend fun getAnswer(question: String): String?
 
+    @Query("SELECT * FROM knowledge WHERE question = :question LIMIT 1")
+    suspend fun getEntity(question: String): KnowledgeEntity?
+
     @Query("SELECT COUNT(*) FROM knowledge")
     suspend fun getCount(): Int
 
@@ -28,4 +31,7 @@ interface KnowledgeDao {
 
     @Query("DELETE FROM knowledge WHERE question = :question")
     suspend fun delete(question: String)
+
+    @Query("UPDATE knowledge SET timesAsked = timesAsked + 1 WHERE question = :question")
+    suspend fun incrementTimesAsked(question: String)
 }
