@@ -139,7 +139,7 @@ class CalculatorActivity : AppCompatActivity() {
                     eat(')'.code)
                 } else if (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) {
                     while (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) nextChar()
-                    x = tokens.substring(startPos + 1, pos).toBigDecimal().toDouble()
+                    x = tokens.substring(startPos, pos).toBigDecimal().toDouble()
                 } else {
                     throw RuntimeException("Unexpected: " + ch.toChar())
                 }
