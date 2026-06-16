@@ -420,20 +420,36 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         val packageName = packageMap[lower]
-        if (packageName != null) {
-            try {
-                val launchIntent = pm.getLaunchIntentForPackage(packageName)
-                if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(launchIntent)
-                    chatAdapter.addMessage(ChatMessage("Opening $appName ✅", isUser = false))
-                    saveChat()
-                    return
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+if (packageName != null) {
+    try {
+        val launchIntent = pm.getLaunchIntentForPackage(packageName)
+        if (launchIntent != null) {
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(launchIntent)
+            chatAdapter.addMessage(ChatMessage("Opening $appName ✅", isUser = false))
+            saveChat()
+            return
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+// Installed apps mein search karo naam se
+val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+val matched = installedApps.firstOrNull {
+    pm.getApplicationLabel(it).toString().lowercase().contains(lower)
+}
+if (matched != null) {
+    val launchIntent = pm.getLaunchIntentForPackage(matched.packageName)
+    if (launchIntent != null) {
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(launchIntent)
+        chatAdapter.addMessage(ChatMessage("Opening $appName ✅", isUser = false))
+        saveChat()
+        return
+    }
+}
 
         try {
             val marketIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://search?q=$appName"))
