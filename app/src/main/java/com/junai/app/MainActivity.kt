@@ -302,25 +302,40 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         dot1.clearAnimation()
                         dot2.clearAnimation()
                         dot3.clearAnimation()
+                        
+// Check Room DB first
+var knownAnswer: String? = null
+var confidence = 0
+val latch = java.util.concurrent.CountDownLatch(1)
+CoroutineScope(Dispatchers.IO).launch {
+    // Exact match pehle
+    knownAnswer = AppDatabase.getInstance(this@MainActivity)
+        .knowledgeDao()
+        .getAnswer(text.lowercase().trim())
+    
+    // Agar exact nahi mila toh fuzzy
+    if (knownAnswer == null) {
+        val (fuzzyAnswer, score) = findBestMatch(text)
+        if (score >= 75) {
+            knownAnswer = fuzzyAnswer
+            confidence = score
+        }
+    } else {
+        confidence = 100
+    }
+    latch.countDown()
+}
+latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
 
-                        // Check Room DB first
-                        var knownAnswer: String? = null
-                        val latch = java.util.concurrent.CountDownLatch(1)
-                        CoroutineScope(Dispatchers.IO).launch {
-                            knownAnswer = AppDatabase.getInstance(this@MainActivity)
-                                .knowledgeDao()
-                                .getAnswer(text.lowercase().trim())
-                            latch.countDown()
-                        }
-                        latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
-                        val knownAnswerFinal = knownAnswer
-                        val response = if (knownAnswerFinal != null) {
-                            knownAnswerFinal
-                        } else {
-                            // Add to unanswered questions
-                            UnansweredActivity.addQuestion(this, text)
-                            "I don't know the answer yet. I've added this to my Unanswered Questions. Please teach me!"
-                        }
+val response = when {
+    knownAnswer != null && confidence == 100 -> knownAnswer!!
+    knownAnswer != null && confidence >= 90 -> knownAnswer!!
+    knownAnswer != null && confidence >= 75 -> "I think you mean something related:\n$knownAnswer"
+    else -> {
+        UnansweredActivity.addQuestion(this, text)
+        "I don't know the answer yet. I've added this to my Unanswered Questions. Please teach me!"
+    }
+}
 
                         chatAdapter.addMessage(ChatMessage(response, isUser = false))
                         recyclerView.scrollToPosition(messages.size - 1)
@@ -510,6 +525,48 @@ if (matched != null) {
         }
         saveChat()
     }
+
+    private fun fuzzyMatch(query: String, stored: String): Int {
+    val q = query.lowercase().trim()
+    val s = stored.lowercase().trim()
+    
+    if (q == s) return 100
+    if (s.contains(q) || q.contains(s)) return 90
+    
+    val qWords = q.split(" ").toSet()
+    val sWords = s.split(" ").toSet()
+    val common = qWords.intersect(sWords).size
+    val total = qWords.union(sWords).size
+    
+    return if (total == 0) 0 else (common * 100 / total)
+}
+
+private suspend fun findBestMatch(query: String): Pair<String?, Int> {
+    val all = AppDatabase.getInstance(this).knowledgeDao().getAll()
+    var bestAnswer: String? = null
+    var bestScore = 0
+
+    for (entity in all) {
+        // Check question
+        val score = fuzzyMatch(query, entity.question)
+        if (score > bestScore) {
+            bestScore = score
+            bestAnswer = entity.answer
+        }
+
+        // Check aliases
+        if (entity.aliases.isNotEmpty()) {
+            entity.aliases.split("|").forEach { alias ->
+                val aliasScore = fuzzyMatch(query, alias)
+                if (aliasScore > bestScore) {
+                    bestScore = aliasScore
+                    bestAnswer = entity.answer
+                }
+            }
+        }
+    }
+    return Pair(bestAnswer, bestScore)
+}
 
     private fun searchAndRespond(query: String, recyclerView: RecyclerView) {
         // Check Room DB first
