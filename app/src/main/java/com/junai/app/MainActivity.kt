@@ -308,8 +308,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             latch.countDown()
                         }
                         latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
-                        val response = if (knownAnswer != null) {
-                            knownAnswer
+                        val knownAnswerFinal = knownAnswer
+                        val response = if (knownAnswerFinal != null) {
+                            knownAnswerFinal
                         } else {
                             // Add to unanswered questions
                             UnansweredActivity.addQuestion(this, text)
@@ -455,11 +456,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             latch.countDown()
         }
         latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
-        if (stored != null) {
-            chatAdapter.addMessage(ChatMessage(stored, isUser = false))
+        val storedAnswer = stored
+        if (storedAnswer != null) {
+            chatAdapter.addMessage(ChatMessage(storedAnswer, isUser = false))
             recyclerView.scrollToPosition(messages.size - 1)
             saveChat()
-            if (voiceEnabled && ttsReady) speakText(stored)
+            if (voiceEnabled && ttsReady) speakText(storedAnswer)
             return
         }
 
