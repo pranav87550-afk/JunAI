@@ -12,6 +12,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class NegativeResponsesActivity : AppCompatActivity() {
 
@@ -58,12 +61,12 @@ class NegativeResponsesActivity : AppCompatActivity() {
                         return@setOnClickListener
                     }
 
-                    // Save correct answer to knowledge base
-                    val prefs = getSharedPreferences("knowledge_prefs", MODE_PRIVATE)
-                    val json = prefs.getString("knowledge_list", "{}") ?: "{}"
-                    val obj = JSONObject(json)
-                    obj.put(question.lowercase().trim(), correct)
-                    prefs.edit().putString("knowledge_list", obj.toString()).apply()
+                    // Save correct answer to Room DB
+                    CoroutineScope(Dispatchers.IO).launch {
+                        AppDatabase.getInstance(this@NegativeResponsesActivity)
+                            .knowledgeDao()
+                            .insert(KnowledgeEntity(question.lowercase().trim(), correct))
+                    }
 
                     // Remove from negative list
                     negativeList.removeAt(position)
