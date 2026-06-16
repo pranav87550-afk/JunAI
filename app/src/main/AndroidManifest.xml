@@ -56,6 +56,7 @@
         <activity android:name=".MusicPlayerActivity" android:exported="false"/>
         <activity android:name=".PlaylistActivity" android:exported="false"/>
         <activity android:name=".UnansweredActivity" android:exported="false"/>
+        <activity android:name=".LearningCenterActivity" android:exported="false"/>
         <activity android:name=".NegativeResponsesActivity" android:exported="false"/>
         <activity android:name=".VoiceCommandsActivity" android:exported="false"/>
         <activity android:name=".DataManagementActivity" android:exported="false"/>
