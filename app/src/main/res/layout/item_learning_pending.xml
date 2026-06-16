@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1A1A1A"
+    android:padding="16dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp">
+
+    <TextView
+        android:id="@+id/pendingQuestion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:paddingBottom="6dp"/>
+
+    <TextView
+        android:id="@+id/pendingIntent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#E53935"
+        android:textSize="12sp"
+        android:paddingBottom="2dp"/>
+
+    <TextView
+        android:id="@+id/pendingCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        android:paddingBottom="2dp"/>
+
+    <TextView
+        android:id="@+id/pendingReason"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        android:paddingBottom="10dp"/>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnTrainKnowledge"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="📚 Knowledge"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/settings_button_red"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/btnTrainCommand"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="⚡ Command"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/rounded_dark_button"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/btnIgnore"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="✕ Ignore"
+            android:textSize="11sp"
+            android:textColor="#888888"
+            android:background="@drawable/rounded_dark_button"/>
+
+    </LinearLayout>
+
+</LinearLayout>
