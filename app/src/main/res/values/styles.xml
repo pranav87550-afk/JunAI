@@ -10,6 +10,12 @@
     <item name="android:background">#0A0A0F</item>
 </style>
 
+    <style name="DarkDialog" parent="Theme.AppCompat.Dialog.Alert">
+    <item name="android:background">#1A1A1A</item>
+    <item name="android:textColor">#FFFFFF</item>
+    <item name="colorAccent">#E53935</item>
+</style>
+
     <style name="WhiteHintEditText" parent="Widget.AppCompat.EditText">
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:textColorHint">#888888</item>
