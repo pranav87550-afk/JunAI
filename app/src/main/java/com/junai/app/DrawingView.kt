@@ -32,6 +32,10 @@ class DrawingView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         currentPaint = createPaint(Color.WHITE, 24f)
     }
 
+    fun setBrushSize(size: Float) {
+    currentPaint = createPaint(currentPaint.color, size)
+    }
+
     fun undo() {
         if (paths.isNotEmpty()) {
             undonePaths.add(paths.removeLast())
