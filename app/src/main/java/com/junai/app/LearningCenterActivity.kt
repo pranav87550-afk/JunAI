@@ -101,13 +101,15 @@ class LearningCenterActivity : AppCompatActivity() {
 
                         // Ignore
                         holder.itemView.findViewById<Button>(R.id.btnIgnore).setOnClickListener {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                learningRepo.getAllLearningItems()
-                                    .firstOrNull { it.id == item.id }?.let {
-                                        learningRepo.getPendingItems()
-                                    }
-                            }
-                            showPendingTab()
+    CoroutineScope(Dispatchers.IO).launch {
+        learningRepo.getAllLearningItems()
+            .firstOrNull { it.id == item.id }?.let { found ->
+                learningRepo.updateStatus(found.id, "IGNORED")
+            }
+        withContext(Dispatchers.Main) {
+            showPendingTab()
+        }
+    }
                         }
                     }
 
