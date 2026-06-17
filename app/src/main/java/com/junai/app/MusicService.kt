@@ -59,6 +59,7 @@ class MusicService : Service() {
     override fun onBind(intent: Intent): IBinder = binder
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (songs.isEmpty()) return START_NOT_STICKY
     when (intent?.action) {
         "NEXT" -> nextSong()
         "PREV" -> prevSong()
