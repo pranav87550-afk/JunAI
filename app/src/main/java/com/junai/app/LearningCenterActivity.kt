@@ -222,89 +222,89 @@ class LearningCenterActivity : AppCompatActivity() {
 
     // ==================== ANALYTICS TAB ====================
     private fun showAnalyticsTab() {
-        setActiveTab(tabAnalytics)
-        contentArea.removeAllViews()
+    setActiveTab(tabAnalytics)
+    contentArea.removeAllViews()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val stats = learningRepo.getStats()
-            val failures = learningRepo.getFailureLog()
-            withContext(Dispatchers.Main) {
-                val scroll = ScrollView(this@LearningCenterActivity).apply {
-                    layoutParams = LinearLayout.LayoutParams(
+    CoroutineScope(Dispatchers.IO).launch {
+        val stats = learningRepo.getStats()
+        val failures = learningRepo.getFailureLog()
+        val achievements = learningRepo.getAchievements()
+        withContext(Dispatchers.Main) {
+            val scroll = ScrollView(this@LearningCenterActivity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                )
+            }
+            val inner = LinearLayout(this@LearningCenterActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(16, 16, 16, 16)
+            }
+            scroll.addView(inner)
+            contentArea.addView(scroll)
+
+            // Stats cards
+            addStatCard(inner, "🧠 Knowledge Learned", "${stats?.knowledgeLearned ?: 0}")
+            addStatCard(inner, "⚡ Commands Learned", "${stats?.commandsLearned ?: 0}")
+            addStatCard(inner, "🎯 Skills Learned", "${stats?.skillsLearned ?: 0}")
+            addStatCard(inner, "❌ Failed Queries", "${stats?.failedQueries ?: 0}")
+
+            // Recent failures
+            val failTitle = TextView(this@LearningCenterActivity).apply {
+                text = "Recent Failures"
+                setTextColor(android.graphics.Color.parseColor("#E53935"))
+                textSize = 16f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setPadding(0, 24, 0, 8)
+            }
+            inner.addView(failTitle)
+
+            failures.take(10).forEach { log ->
+                val card = TextView(this@LearningCenterActivity).apply {
+                    text = "❌ ${log.question}\n→ ${log.failureReason} (${log.confidence.toInt()}%)"
+                    setTextColor(android.graphics.Color.WHITE)
+                    textSize = 13f
+                    setBackgroundColor(android.graphics.Color.parseColor("#1A1A1A"))
+                    setPadding(16, 12, 16, 12)
+                    val params = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT
+                        LinearLayout.LayoutParams.WRAP_CONTENT
                     )
+                    params.setMargins(0, 4, 0, 4)
+                    layoutParams = params
                 }
-                val inner = LinearLayout(this@LearningCenterActivity).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(16, 16, 16, 16)
-                }
-                scroll.addView(inner)
-                contentArea.addView(scroll)
+                inner.addView(card)
+            }
 
-                // Stats cards
-                addStatCard(inner, "🧠 Knowledge Learned", "${stats?.knowledgeLearned ?: 0}")
-                addStatCard(inner, "⚡ Commands Learned", "${stats?.commandsLearned ?: 0}")
-                addStatCard(inner, "🎯 Skills Learned", "${stats?.skillsLearned ?: 0}")
-                addStatCard(inner, "❌ Failed Queries", "${stats?.failedQueries ?: 0}")
+            // Achievements section
+            val achieveTitle = TextView(this@LearningCenterActivity).apply {
+                text = "🏆 Achievements"
+                setTextColor(android.graphics.Color.parseColor("#E53935"))
+                textSize = 16f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setPadding(0, 24, 0, 8)
+            }
+            inner.addView(achieveTitle)
 
-                // Recent failures
-                val failTitle = TextView(this@LearningCenterActivity).apply {
-                    text = "Recent Failures"
-                    setTextColor(android.graphics.Color.parseColor("#E53935"))
-                    textSize = 16f
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    setPadding(0, 24, 0, 8)
+            achievements.forEach { achievement ->
+                val card = TextView(this@LearningCenterActivity).apply {
+                    text = achievement
+                    setTextColor(android.graphics.Color.WHITE)
+                    textSize = 13f
+                    setBackgroundColor(android.graphics.Color.parseColor("#1A1A1A"))
+                    setPadding(16, 12, 16, 12)
+                    val params = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    params.setMargins(0, 4, 0, 4)
+                    layoutParams = params
                 }
-                inner.addView(failTitle)
-
-                failures.take(10).forEach { log ->
-                    val card = TextView(this@LearningCenterActivity).apply {
-                        text = "❌ ${log.question}\n→ ${log.failureReason} (${log.confidence.toInt()}%)"
-                        setTextColor(android.graphics.Color.WHITE)
-                        textSize = 13f
-                        setBackgroundColor(android.graphics.Color.parseColor("#1A1A1A"))
-                        setPadding(16, 12, 16, 12)
-                        val params = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                        )
-                        params.setMargins(0, 4, 0, 4)
-                        layoutParams = params
-                    }
-                    inner.addView(card)
-                }
+                inner.addView(card)
             }
         }
     }
-
-    // Achievements section
-val achieveTitle = TextView(this@LearningCenterActivity).apply {
-    text = "🏆 Achievements"
-    setTextColor(android.graphics.Color.parseColor("#E53935"))
-    textSize = 16f
-    setTypeface(null, android.graphics.Typeface.BOLD)
-    setPadding(0, 24, 0, 8)
-}
-inner.addView(achieveTitle)
-
-val achievements = learningRepo.getAchievements()
-achievements.forEach { achievement ->
-    val card = TextView(this@LearningCenterActivity).apply {
-        text = achievement
-        setTextColor(android.graphics.Color.WHITE)
-        textSize = 13f
-        setBackgroundColor(android.graphics.Color.parseColor("#1A1A1A"))
-        setPadding(16, 12, 16, 12)
-        val params = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        params.setMargins(0, 4, 0, 4)
-        layoutParams = params
     }
-    inner.addView(card)
-}
 
     private fun addStatCard(parent: LinearLayout, title: String, value: String) {
         val card = LinearLayout(this).apply {
