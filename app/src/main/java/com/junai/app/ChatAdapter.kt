@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -33,6 +34,7 @@ class ChatAdapter(
     companion object {
         const val TYPE_USER = 1
         const val TYPE_JUN = 2
+        const val MAX_MESSAGES = 200
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -62,29 +64,24 @@ class ChatAdapter(
             holder.messageText.text = message.text
             holder.timeText.text = time
 
-            // Get previous user message as question
             val question = if (position > 0 && messages[position - 1].isUser)
                 messages[position - 1].text else ""
 
-            // Copy button
             holder.copyButton.setOnClickListener {
                 val clipboard = it.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("JunAI", message.text))
                 android.widget.Toast.makeText(it.context, "Copied!", android.widget.Toast.LENGTH_SHORT).show()
             }
 
-            // Speak button
             holder.speakButton.setOnClickListener {
                 actionListener?.onSpeak(message.text)
             }
 
-            // Thumbs up
             holder.thumbsUpButton.setOnClickListener {
                 actionListener?.onThumbsUp(message.text, question)
                 android.widget.Toast.makeText(it.context, "👍 Good answer!", android.widget.Toast.LENGTH_SHORT).show()
             }
 
-            // Thumbs down
             holder.thumbsDownButton.setOnClickListener {
                 actionListener?.onThumbsDown(message.text, question)
                 android.widget.Toast.makeText(it.context, "👎 Noted!", android.widget.Toast.LENGTH_SHORT).show()
@@ -93,6 +90,11 @@ class ChatAdapter(
     }
 
     override fun getItemCount() = messages.size
+
+    // DiffUtil for better performance
+    override fun getItemId(position: Int): Long {
+        return messages[position].timestamp
+    }
 
     class UserViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val messageText: TextView = view.findViewById(R.id.messageText)
@@ -109,7 +111,26 @@ class ChatAdapter(
     }
 
     fun addMessage(message: ChatMessage) {
+        // Max 200 messages limit
+        if (messages.size >= MAX_MESSAGES) {
+            messages.removeAt(0)
+            notifyItemRemoved(0)
+        }
         messages.add(message)
         notifyItemInserted(messages.size - 1)
+    }
+
+    fun updateMessages(newMessages: List<ChatMessage>) {
+        val diffResult = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = messages.size
+            override fun getNewListSize() = newMessages.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+                messages[oldPos].timestamp == newMessages[newPos].timestamp
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+                messages[oldPos] == newMessages[newPos]
+        })
+        messages.clear()
+        messages.addAll(newMessages)
+        diffResult.dispatchUpdatesTo(this)
     }
 }
