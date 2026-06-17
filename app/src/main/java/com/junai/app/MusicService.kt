@@ -58,6 +58,20 @@ class MusicService : Service() {
 
     override fun onBind(intent: Intent): IBinder = binder
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    when (intent?.action) {
+        "NEXT" -> nextSong()
+        "PREV" -> prevSong()
+        "PAUSE" -> togglePlayPause()
+        "STOP" -> stopSelf()
+        ACTION_NEXT -> nextSong()
+        ACTION_PREV -> prevSong()
+        ACTION_PLAY_PAUSE -> togglePlayPause()
+        ACTION_STOP -> stopSelf()
+    }
+    return START_NOT_STICKY
+    }
+
     fun setSongs(songList: List<SongItem>, index: Int, playlist: Boolean = false, pName: String = "") {
         songs = songList.toMutableList()
         currentIndex = index
