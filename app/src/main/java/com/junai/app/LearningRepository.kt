@@ -218,7 +218,7 @@ suspend fun trainKnowledgeWithChain(
 
         // 4. Fuzzy match
         val fuzzyResult = fuzzySearch(q)
-        if (fuzzyResult != null && fuzzyResult.confidence >= 60f) {
+        if (fuzzyResult != null && fuzzyResult.confidence >= 70f) {
             return fuzzyResult
         }
 
