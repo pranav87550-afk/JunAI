@@ -74,8 +74,12 @@ class MusicPlayerActivity : AppCompatActivity() {
         }
 
         findViewById<ImageButton>(R.id.prevButton).setOnClickListener {
-            musicService?.prevSong()
-            handler.postDelayed({ updateUI() }, 300)
+    try {
+        musicService?.prevSong()
+        handler.postDelayed({ updateUI() }, 300)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
         }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
