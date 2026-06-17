@@ -443,7 +443,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                                 val response: String
                                 if (searchResult.answer != null && searchResult.confidence >= 90f) {
                                     response = searchResult.answer
-                                } else if (searchResult.answer != null && searchResult.confidence >= 60f) {
+                                } else if (searchResult.answer != null && searchResult.confidence >= 70f) {
                                     response = "I think you mean:\n${searchResult.answer}"
                                 } else {
                                     CoroutineScope(Dispatchers.IO).launch {
