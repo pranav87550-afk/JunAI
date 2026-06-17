@@ -74,8 +74,12 @@ class CalculatorActivity : AppCompatActivity() {
                 expression = result
                 updateDisplay()
             } catch (e: Exception) {
-                result = "Error"
-                updateDisplay()
+    result = when {
+        expression.contains("/0") -> "Can't divide by zero! ❌"
+        expression.isEmpty() -> "0"
+        else -> "Error ❌"
+    }
+    updateDisplay()
             }
         }
     }
