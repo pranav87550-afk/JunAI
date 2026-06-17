@@ -592,7 +592,7 @@ IntentDetector.Intent.PREV_SONG -> {
             }
         }
 
-        private fun handleTrainedCommand(intent: String, target: String, text: String, recyclerView: RecyclerView) {
+    fun handleTrainedCommand(intent: String, target: String, text: String, recyclerView: RecyclerView) {
     when (intent) {
         "OPEN_APP" -> {
             if (target.isNotEmpty()) openApp(target)
