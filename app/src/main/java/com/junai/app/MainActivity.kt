@@ -308,6 +308,40 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 IntentDetector.Intent.SHOW_MUSIC -> {
                     startActivity(Intent(this, MusicHomeActivity::class.java))
                 }
+                IntentDetector.Intent.PLAY_MUSIC -> {
+    val intent = Intent(this, MusicHomeActivity::class.java)
+    startActivity(intent)
+    chatAdapter.addMessage(ChatMessage("Music open kar rahi hun! 🎵", isUser = false))
+    recyclerView.scrollToPosition(messages.size - 1)
+    saveChat()
+}
+
+IntentDetector.Intent.PAUSE_MUSIC -> {
+    val serviceIntent = Intent(this, MusicService::class.java)
+    serviceIntent.action = "PAUSE"
+    startService(serviceIntent)
+    chatAdapter.addMessage(ChatMessage("Music pause! ⏸️", isUser = false))
+    recyclerView.scrollToPosition(messages.size - 1)
+    saveChat()
+}
+
+IntentDetector.Intent.NEXT_SONG -> {
+    val serviceIntent = Intent(this, MusicService::class.java)
+    serviceIntent.action = "NEXT"
+    startService(serviceIntent)
+    chatAdapter.addMessage(ChatMessage("Next song! ⏭️", isUser = false))
+    recyclerView.scrollToPosition(messages.size - 1)
+    saveChat()
+}
+
+IntentDetector.Intent.PREV_SONG -> {
+    val serviceIntent = Intent(this, MusicService::class.java)
+    serviceIntent.action = "PREV"
+    startService(serviceIntent)
+    chatAdapter.addMessage(ChatMessage("Previous song! ⏮️", isUser = false))
+    recyclerView.scrollToPosition(messages.size - 1)
+    saveChat()
+}
                 IntentDetector.Intent.SHOW_UNANSWERED -> {
                     startActivity(Intent(this, UnansweredActivity::class.java))
                 }
