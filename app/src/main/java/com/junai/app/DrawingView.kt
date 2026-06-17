@@ -50,6 +50,17 @@ class DrawingView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         }
     }
 
+    fun getBitmap(): Bitmap {
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    canvas.drawColor(Color.WHITE)
+    for ((path, paint) in paths) {
+        canvas.drawPath(path, paint)
+    }
+    canvas.drawPath(currentPath, currentPaint)
+    return bitmap
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         for ((path, paint) in paths) {
