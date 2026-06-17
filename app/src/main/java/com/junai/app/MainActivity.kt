@@ -403,79 +403,70 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 }
 
                 IntentDetector.Intent.UNKNOWN -> {
-                    // Pehle trained commands check karo
-                    var trainedHandled = false
-                    val latchCmd = java.util.concurrent.CountDownLatch(1)
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val commands = learningRepo.getAllCommands()
-                        val matchedCmd = commands.firstOrNull { cmd ->
-                            text.lowercase().contains(cmd.phrase.lowercase()) ||
-                            cmd.phrase.lowercase().contains(text.lowercase())
-                        }
-                        if (matchedCmd != null) {
-                            trainedHandled = true
-                            withContext(Dispatchers.Main) {
-                                handleTrainedCommand(matchedCmd.intent, matchedCmd.target, text, recyclerView)
-                            }
-                        }
-                        latchCmd.countDown()
-                    }
-                    latchCmd.await(2, java.util.concurrent.TimeUnit.SECONDS)
-                    if (trainedHandled) return@setOnClickListener
+    typingIndicator.visibility = View.VISIBLE
+    animateDot(dot1, 0)
+    animateDot(dot2, 150)
+    animateDot(dot3, 300)
 
-                    typingIndicator.visibility = View.VISIBLE
-                    animateDot(dot1, 0)
-                    animateDot(dot2, 150)
-                    animateDot(dot3, 300)
+    CoroutineScope(Dispatchers.IO).launch {
+        // Trained commands check
+        val commands = learningRepo.getAllCommands()
+        val matchedCmd = commands.firstOrNull { cmd ->
+            text.lowercase().contains(cmd.phrase.lowercase()) ||
+            cmd.phrase.lowercase().contains(text.lowercase())
+        }
 
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        typingIndicator.visibility = View.GONE
-                        dot1.clearAnimation()
-                        dot2.clearAnimation()
-                        dot3.clearAnimation()
+        if (matchedCmd != null) {
+            withContext(Dispatchers.Main) {
+                typingIndicator.visibility = View.GONE
+                dot1.clearAnimation()
+                dot2.clearAnimation()
+                dot3.clearAnimation()
+                handleTrainedCommand(matchedCmd.intent, matchedCmd.target, text, recyclerView)
+            }
+            return@launch
+        }
 
-                        var searchResult: SearchResult? = null
-                        val latch = java.util.concurrent.CountDownLatch(1)
+        // Knowledge search
+        val searchResult = learningRepo.findAnswer(text)
+
+        withContext(Dispatchers.Main) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                typingIndicator.visibility = View.GONE
+                dot1.clearAnimation()
+                dot2.clearAnimation()
+                dot3.clearAnimation()
+
+                val response = when {
+                    searchResult.confidence >= 90f -> searchResult.answer ?: ""
+                    searchResult.confidence >= 60f -> "I think you mean:\n${searchResult.answer}"
+                    else -> {
                         CoroutineScope(Dispatchers.IO).launch {
-                            searchResult = learningRepo.findAnswer(text)
-                            latch.countDown()
+                            learningRepo.logFailure(
+                                question = text,
+                                detectedIntent = intentResult.intent.name,
+                                confidence = intentResult.confidence.toFloat(),
+                                failureReason = "NO_MATCH"
+                            )
                         }
-                        latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
-
-                        val result = searchResult
-                        val response = when {
-                            result != null && result.confidence >= 90f -> result.answer ?: ""
-                            result != null && result.confidence >= 60f -> "I think you mean:\n${result.answer}"
-                            else -> {
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    learningRepo.logFailure(
-                                        question = text,
-                                        detectedIntent = intentResult.intent.name,
-                                        confidence = intentResult.confidence.toFloat(),
-                                        failureReason = "NO_MATCH"
-                                    )
-                                }
-                                "I don't know yet, but I'm learning! Check Learning Center. 🧠"
-                            }
-                        }
-
-                        if (response.isNotEmpty()) {
-                            chatAdapter.addMessage(ChatMessage(response, isUser = false))
-                            if (result != null && result.relatedQuestions.isNotEmpty()) {
-                                val related = "Related: " + result.relatedQuestions.take(3).joinToString(" • ")
-                                chatAdapter.addMessage(ChatMessage(related, isUser = false))
-                            }
-                            recyclerView.scrollToPosition(messages.size - 1)
-                            saveChat()
-                            if (voiceEnabled && ttsReady) speakText(response)
-                        }
-                    }, 1500)
+                        "I don't know yet, but I'm learning! Check Learning Center. 🧠"
+                    }
                 }
 
-                else -> {}
-            }
+                if (response.isNotEmpty()) {
+                    chatAdapter.addMessage(ChatMessage(response, isUser = false))
+                    if (searchResult.relatedQuestions.isNotEmpty()) {
+                        val related = "Related: " + searchResult.relatedQuestions.take(3).joinToString(" • ")
+                        chatAdapter.addMessage(ChatMessage(related, isUser = false))
+                    }
+                    recyclerView.scrollToPosition(messages.size - 1)
+                    saveChat()
+                    if (voiceEnabled && ttsReady) speakText(response)
+                }
+            }, 1500)
         }
     }
+                }
 
     private fun handleTrainedCommand(intent: String, target: String, text: String, recyclerView: RecyclerView) {
         when (intent) {
@@ -703,63 +694,67 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun searchAndRespond(query: String, recyclerView: RecyclerView) {
-        var stored: String? = null
-        val latch = java.util.concurrent.CountDownLatch(1)
-        CoroutineScope(Dispatchers.IO).launch {
-            stored = AppDatabase.getInstance(this@MainActivity)
-                .knowledgeDao()
-                .getAnswer(query.lowercase().trim())
-            latch.countDown()
-        }
-        latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
-        val storedAnswer = stored
+    val typingIndicator = findViewById<LinearLayout>(R.id.typingIndicator)
+    val dot1 = findViewById<View>(R.id.dot1)
+    val dot2 = findViewById<View>(R.id.dot2)
+    val dot3 = findViewById<View>(R.id.dot3)
+
+    typingIndicator.visibility = View.VISIBLE
+    animateDot(dot1, 0)
+    animateDot(dot2, 150)
+    animateDot(dot3, 300)
+
+    CoroutineScope(Dispatchers.IO).launch {
+        val storedAnswer = AppDatabase.getInstance(this@MainActivity)
+            .knowledgeDao()
+            .getAnswer(query.lowercase().trim())
+
         if (storedAnswer != null) {
-            chatAdapter.addMessage(ChatMessage(storedAnswer, isUser = false))
-            recyclerView.scrollToPosition(messages.size - 1)
-            saveChat()
-            if (voiceEnabled && ttsReady) speakText(storedAnswer)
-            return
+            withContext(Dispatchers.Main) {
+                typingIndicator.visibility = View.GONE
+                dot1.clearAnimation()
+                dot2.clearAnimation()
+                dot3.clearAnimation()
+                chatAdapter.addMessage(ChatMessage(storedAnswer, isUser = false))
+                recyclerView.scrollToPosition(messages.size - 1)
+                saveChat()
+                if (voiceEnabled && ttsReady) speakText(storedAnswer)
+            }
+            return@launch
         }
 
-        val typingIndicator = findViewById<LinearLayout>(R.id.typingIndicator)
-        val dot1 = findViewById<View>(R.id.dot1)
-        val dot2 = findViewById<View>(R.id.dot2)
-        val dot3 = findViewById<View>(R.id.dot3)
+        withContext(Dispatchers.Main) {
+            val client = okhttp3.OkHttpClient()
+            val wikiUrl = "https://en.wikipedia.org/api/rest_v1/page/summary/${java.net.URLEncoder.encode(query, "UTF-8")}"
+            val wikiRequest = okhttp3.Request.Builder().url(wikiUrl).build()
 
-        typingIndicator.visibility = View.VISIBLE
-        animateDot(dot1, 0)
-        animateDot(dot2, 150)
-        animateDot(dot3, 300)
+            client.newCall(wikiRequest).enqueue(object : okhttp3.Callback {
+                override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                    fetchFromDuckDuckGo(query, recyclerView, client, typingIndicator, dot1, dot2, dot3)
+                }
 
-        val client = okhttp3.OkHttpClient()
-        val wikiUrl = "https://en.wikipedia.org/api/rest_v1/page/summary/${java.net.URLEncoder.encode(query, "UTF-8")}"
-        val wikiRequest = okhttp3.Request.Builder().url(wikiUrl).build()
-
-        client.newCall(wikiRequest).enqueue(object : okhttp3.Callback {
-            override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
-                fetchFromDuckDuckGo(query, recyclerView, client, typingIndicator, dot1, dot2, dot3)
-            }
-
-            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                val body = response.body?.string()
-                runOnUiThread {
-                    try {
-                        val json = org.json.JSONObject(body ?: "")
-                        val extract = json.optString("extract", "")
-                        if (extract.isNotEmpty() && extract.length > 20) {
-                            val sentences = extract.split(". ")
-                            val shortAnswer = sentences.take(3).joinToString(". ").trim()
-                            val finalAnswer = if (!shortAnswer.endsWith(".")) "$shortAnswer." else shortAnswer
-                            storeAndRespond(query, finalAnswer, recyclerView, typingIndicator, dot1, dot2, dot3)
-                        } else {
+                override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                    val body = response.body?.string()
+                    runOnUiThread {
+                        try {
+                            val json = org.json.JSONObject(body ?: "")
+                            val extract = json.optString("extract", "")
+                            if (extract.isNotEmpty() && extract.length > 20) {
+                                val sentences = extract.split(". ")
+                                val shortAnswer = sentences.take(3).joinToString(". ").trim()
+                                val finalAnswer = if (!shortAnswer.endsWith(".")) "$shortAnswer." else shortAnswer
+                                storeAndRespond(query, finalAnswer, recyclerView, typingIndicator, dot1, dot2, dot3)
+                            } else {
+                                fetchFromDuckDuckGo(query, recyclerView, client, typingIndicator, dot1, dot2, dot3)
+                            }
+                        } catch (e: Exception) {
                             fetchFromDuckDuckGo(query, recyclerView, client, typingIndicator, dot1, dot2, dot3)
                         }
-                    } catch (e: Exception) {
-                        fetchFromDuckDuckGo(query, recyclerView, client, typingIndicator, dot1, dot2, dot3)
                     }
                 }
-            }
-        })
+            })
+        }
+    }
     }
 
     private fun fetchFromDuckDuckGo(
