@@ -429,6 +429,27 @@ IntentDetector.Intent.PREV_SONG -> {
                 }
 
                 IntentDetector.Intent.UNKNOWN -> {
+                    // Pehle trained commands check karo
+    var trainedHandled = false
+    val latchCmd = java.util.concurrent.CountDownLatch(1)
+    CoroutineScope(Dispatchers.IO).launch {
+        val commands = learningRepo.getAllCommands()
+        val matchedCmd = commands.firstOrNull { cmd ->
+            text.lowercase().contains(cmd.phrase.lowercase()) ||
+            cmd.phrase.lowercase().contains(text.lowercase())
+        }
+        if (matchedCmd != null) {
+            trainedHandled = true
+            withContext(Dispatchers.Main) {
+                handleTrainedCommand(matchedCmd.intent, matchedCmd.target, text, recyclerView)
+            }
+        }
+        latchCmd.countDown()
+    }
+    latchCmd.await(2, java.util.concurrent.TimeUnit.SECONDS)
+    if (trainedHandled) return@setOnClickListener
+                    
+                    // Baaki purana UNKNOWN code...
                     typingIndicator.visibility = View.VISIBLE
                     animateDot(dot1, 0)
                     animateDot(dot2, 150)
@@ -568,6 +589,58 @@ IntentDetector.Intent.PREV_SONG -> {
                     break
                 }
             }
+        }
+
+        private fun handleTrainedCommand(intent: String, target: String, text: String, recyclerView: RecyclerView) {
+    when (intent) {
+        "OPEN_APP" -> {
+            if (target.isNotEmpty()) openApp(target)
+            else openApp(text)
+        }
+        "CALL_CONTACT" -> {
+            if (target.isNotEmpty()) makeCall(target)
+        }
+        "PLAY_MUSIC" -> {
+            startActivity(Intent(this, MusicHomeActivity::class.java))
+            chatAdapter.addMessage(ChatMessage("Music open kar rahi hun! 🎵", isUser = false))
+        }
+        "PAUSE_MUSIC" -> {
+            val si = Intent(this, MusicService::class.java).apply { action = "PAUSE" }
+            startService(si)
+            chatAdapter.addMessage(ChatMessage("Music pause! ⏸️", isUser = false))
+        }
+        "SET_REMINDER" -> {
+            startActivity(Intent(this, ReminderActivity::class.java))
+            chatAdapter.addMessage(ChatMessage("Reminder screen open! ⏰", isUser = false))
+        }
+        "CREATE_NOTE" -> {
+            startActivity(Intent(this, NotesActivity::class.java))
+            chatAdapter.addMessage(ChatMessage("Notes screen open! 📝", isUser = false))
+        }
+        "SEARCH_WEB" -> {
+            val query = target.ifEmpty { text }
+            searchAndRespond(query, recyclerView)
+        }
+        "SHOW_SETTINGS" -> startActivity(Intent(this, SettingsActivity::class.java))
+        "TELL_TIME" -> {
+            val time = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+            chatAdapter.addMessage(ChatMessage("Abhi time hai: $time ⏰", isUser = false))
+        }
+        "TELL_DATE" -> {
+            val date = java.text.SimpleDateFormat("dd MMMM yyyy, EEEE", java.util.Locale.getDefault()).format(java.util.Date())
+            chatAdapter.addMessage(ChatMessage("Aaj ki date hai: $date 📅", isUser = false))
+        }
+        "TELL_BATTERY" -> {
+            val bm = getSystemService(android.content.Context.BATTERY_SERVICE) as android.os.BatteryManager
+            val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            chatAdapter.addMessage(ChatMessage("Battery: $level% 🔋", isUser = false))
+        }
+        else -> {
+            chatAdapter.addMessage(ChatMessage("Command samajh nahi aaya! 🤔", isUser = false))
+        }
+    }
+    recyclerView.scrollToPosition(messages.size - 1)
+    saveChat()
         }
 
         if (number != null) {
