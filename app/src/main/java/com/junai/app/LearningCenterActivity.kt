@@ -312,59 +312,96 @@ class LearningCenterActivity : AppCompatActivity() {
 
     // ==================== DIALOGS ====================
     private fun showTrainKnowledgeDialog(item: LearningItem) {
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(32, 16, 32, 16)
-        }
+    val layout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(32, 16, 32, 16)
+    }
 
-        val answerInput = EditText(this).apply {
-            hint = "Type answer..."
-            setTextColor(android.graphics.Color.WHITE)
-            setHintTextColor(android.graphics.Color.GRAY)
-            setText("")
-        }
+    val answerInput = EditText(this).apply {
+        hint = "Type answer..."
+        setTextColor(android.graphics.Color.WHITE)
+        setHintTextColor(android.graphics.Color.GRAY)
+    }
 
-        val categoryInput = EditText(this).apply {
-            hint = "Category (e.g. Technology)"
-            setTextColor(android.graphics.Color.WHITE)
-            setHintTextColor(android.graphics.Color.GRAY)
-            setText(item.suggestedCategory)
-        }
+    val categoryInput = EditText(this).apply {
+        hint = "Category (e.g. Technology)"
+        setTextColor(android.graphics.Color.WHITE)
+        setHintTextColor(android.graphics.Color.GRAY)
+        setText(item.suggestedCategory)
+    }
 
-        val aliasInput = EditText(this).apply {
-            hint = "Aliases (separate by |)"
-            setTextColor(android.graphics.Color.WHITE)
-            setHintTextColor(android.graphics.Color.GRAY)
-        }
+    val aliasInput = EditText(this).apply {
+        hint = "Aliases (separate by |)"
+        setTextColor(android.graphics.Color.WHITE)
+        setHintTextColor(android.graphics.Color.GRAY)
+    }
 
-        layout.addView(TextView(this).apply {
-            text = "Question: ${item.question}"
-            setTextColor(android.graphics.Color.WHITE)
-            setPadding(0, 0, 0, 8)
-        })
-        layout.addView(answerInput)
-        layout.addView(categoryInput)
-        layout.addView(aliasInput)
+    val relatedInput = EditText(this).apply {
+        hint = "Related Questions (separate by |)"
+        setTextColor(android.graphics.Color.WHITE)
+        setHintTextColor(android.graphics.Color.GRAY)
+    }
 
-        AlertDialog.Builder(this, R.style.DarkDialog)
-            .setTitle("Train as Knowledge")
-            .setView(layout)
-            .setPositiveButton("Save") { _, _ ->
-                val answer = answerInput.text.toString().trim()
-                val category = categoryInput.text.toString().trim().ifEmpty { "General" }
-                val aliases = aliasInput.text.toString().trim()
-                    .split("|").map { it.trim() }.filter { it.isNotEmpty() }
+    layout.addView(TextView(this).apply {
+        text = "Question: ${item.question}"
+        setTextColor(android.graphics.Color.WHITE)
+        setPadding(0, 0, 0, 8)
+    })
+    layout.addView(TextView(this).apply {
+        text = "Answer:"
+        setTextColor(android.graphics.Color.GRAY)
+        textSize = 12f
+    })
+    layout.addView(answerInput)
+    layout.addView(TextView(this).apply {
+        text = "Category:"
+        setTextColor(android.graphics.Color.GRAY)
+        textSize = 12f
+        setPadding(0, 8, 0, 0)
+    })
+    layout.addView(categoryInput)
+    layout.addView(TextView(this).apply {
+        text = "Aliases (optional):"
+        setTextColor(android.graphics.Color.GRAY)
+        textSize = 12f
+        setPadding(0, 8, 0, 0)
+    })
+    layout.addView(aliasInput)
+    layout.addView(TextView(this).apply {
+        text = "Related Questions (optional):"
+        setTextColor(android.graphics.Color.GRAY)
+        textSize = 12f
+        setPadding(0, 8, 0, 0)
+    })
+    layout.addView(relatedInput)
 
-                if (answer.isNotEmpty()) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        learningRepo.trainKnowledge(item.question, answer, category, aliases)
-                    }
-                    Toast.makeText(this, "Knowledge saved! ✅", Toast.LENGTH_SHORT).show()
-                    showPendingTab()
+    AlertDialog.Builder(this, R.style.DarkDialog)
+        .setTitle("Train as Knowledge")
+        .setView(layout)
+        .setPositiveButton("Save") { _, _ ->
+            val answer = answerInput.text.toString().trim()
+            val category = categoryInput.text.toString().trim().ifEmpty { "General" }
+            val aliases = aliasInput.text.toString().trim()
+                .split("|").map { it.trim() }.filter { it.isNotEmpty() }
+            val related = relatedInput.text.toString().trim()
+                .split("|").map { it.trim() }.filter { it.isNotEmpty() }
+
+            if (answer.isNotEmpty()) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    learningRepo.trainKnowledgeWithChain(
+                        question = item.question,
+                        answer = answer,
+                        category = category,
+                        aliases = aliases,
+                        relatedQuestions = related
+                    )
                 }
+                Toast.makeText(this, "Knowledge + Chain saved! ✅", Toast.LENGTH_SHORT).show()
+                showPendingTab()
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
     }
 
     private fun showTrainCommandDialog(item: LearningItem) {
