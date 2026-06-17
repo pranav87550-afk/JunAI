@@ -50,6 +50,8 @@ class LearningRepository(private val context: Context) {
         refreshStats()
     }
 
+    
+
     // ==================== KNOWLEDGE TRAINING ====================
 
     suspend fun trainKnowledge(
@@ -98,6 +100,32 @@ class LearningRepository(private val context: Context) {
 
         refreshStats()
     }
+
+    suspend fun addRelatedQuestion(knowledgeId: Int, relatedQuestion: String, type: String = "RELATED") {
+    learningDao.insertRelatedQuestion(
+        RelatedQuestionItem(
+            questionId = knowledgeId,
+            relatedQuestion = relatedQuestion,
+            relationshipType = type
+        )
+    )
+}
+
+suspend fun trainKnowledgeWithChain(
+    question: String,
+    answer: String,
+    category: String = "General",
+    aliases: List<String> = emptyList(),
+    relatedQuestions: List<String> = emptyList()
+) {
+    trainKnowledge(question, answer, category, aliases)
+    val saved = learningDao.getKnowledgeByQuestion(question.lowercase().trim())
+    saved?.let { k ->
+        relatedQuestions.forEach { related ->
+            addRelatedQuestion(k.id, related)
+        }
+    }
+}
 
     // ==================== COMMAND TRAINING ====================
 
