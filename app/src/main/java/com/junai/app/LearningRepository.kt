@@ -327,6 +327,46 @@ suspend fun trainKnowledgeWithChain(
         return learningDao.getStatistics()
     }
 
+    suspend fun getAchievements(): List<String> {
+    val stats = getStats() ?: return emptyList()
+    val achievements = mutableListOf<String>()
+
+    // Knowledge achievements
+    when {
+        stats.knowledgeLearned >= 500 -> achievements.add("🏆 Knowledge Master — 500+ questions!")
+        stats.knowledgeLearned >= 100 -> achievements.add("🥇 Knowledge Expert — 100+ questions!")
+        stats.knowledgeLearned >= 50 -> achievements.add("🥈 Knowledge Learner — 50+ questions!")
+        stats.knowledgeLearned >= 10 -> achievements.add("🥉 Knowledge Starter — 10+ questions!")
+        stats.knowledgeLearned >= 1 -> achievements.add("⭐ First Knowledge Added!")
+    }
+
+    // Command achievements
+    when {
+        stats.commandsLearned >= 100 -> achievements.add("⚡ Command Master — 100+ commands!")
+        stats.commandsLearned >= 50 -> achievements.add("⚡ Command Expert — 50+ commands!")
+        stats.commandsLearned >= 10 -> achievements.add("⚡ Command Learner — 10+ commands!")
+        stats.commandsLearned >= 1 -> achievements.add("⭐ First Command Trained!")
+    }
+
+    // Failure achievements (weakness tracking)
+    when {
+        stats.failedQueries >= 100 -> achievements.add("📊 100+ failures — Jun needs more training!")
+        stats.failedQueries >= 50 -> achievements.add("📊 50+ failures — Keep teaching Jun!")
+        stats.failedQueries >= 10 -> achievements.add("📊 10+ failures logged!")
+    }
+
+    // Combo achievements
+    if (stats.knowledgeLearned >= 10 && stats.commandsLearned >= 5) {
+        achievements.add("🎯 Balanced Trainer — Knowledge + Commands!")
+    }
+
+    if (achievements.isEmpty()) {
+        achievements.add("🌱 Just getting started! Teach Jun something!")
+    }
+
+    return achievements
+    }
+
     // ==================== SUGGESTIONS ====================
 
     private fun suggestIntent(question: String): String {
