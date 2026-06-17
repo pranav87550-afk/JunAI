@@ -336,6 +336,10 @@ class LearningRepository(private val context: Context) {
         return learningDao.getPendingItems()
     }
 
+    suspend fun updateStatus(id: Int, status: String) {
+    learningDao.updateLearningStatus(id, status)
+    }
+
     suspend fun getAllLearningItems(): List<LearningItem> {
         return learningDao.getAllLearningItems()
     }
