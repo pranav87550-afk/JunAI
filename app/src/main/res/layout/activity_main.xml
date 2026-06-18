@@ -304,8 +304,6 @@
             <TextView android:id="@+id/menuSongs" android:layout_width="match_parent" android:layout_height="48dp" android:text="🎵  Songs" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
             <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
 
-            <TextView android:id="@+id/menuUnanswered" android:layout_width="match_parent" android:layout_height="48dp" android:text="❓  Unanswered Questions" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
             <TextView android:id="@+id/menuNegative" android:layout_width="match_parent" android:layout_height="48dp" android:text="👎  Negative Response Answers" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
             <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
 
