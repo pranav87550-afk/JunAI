@@ -44,7 +44,8 @@ class AlarmRingActivity : AppCompatActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        // Disable back button
-    }
+    @Deprecated("Deprecated in Java")
+override fun onBackPressed() {
+    // Disable back button on alarm screen
+}
 }
