@@ -74,12 +74,7 @@ class ReminderActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.setReminderButton).setOnClickListener {
             setReminder(timePicker)
-        }
-
-        findViewById<Button>(R.id.saveReminderButton).setOnClickListener {
-            setReminder(timePicker)
-            Toast.makeText(this, "Reminder saved!", Toast.LENGTH_SHORT).show()
-        }
+        }    
     }
 
     private fun setReminder(timePicker: TimePicker) {
