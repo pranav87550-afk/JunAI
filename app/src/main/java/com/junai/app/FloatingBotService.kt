@@ -17,7 +17,7 @@ class FloatingBotService : Service() {
     companion object {
         const val CHANNEL_ID = "floating_bot_channel"
         const val NOTIF_ID   = 42
-        const val BOT_SIZE_DP = 160        // medium size
+        const val BOT_SIZE_DP = 130        // medium size
         const val SNAP_ANIM_MS = 320L
 
         // Intent actions
@@ -198,9 +198,9 @@ class FloatingBotService : Service() {
     // ──────────────────────────────────────────────────────────
     private fun startBobbing() {
         bobbingAnimator?.cancel()
-        val amplitude = 5   // pixels up/down
+        val amplitude = 12   // pixels up/down
         bobbingAnimator = ValueAnimator.ofFloat(-amplitude.toFloat(), amplitude.toFloat()).apply {
-            duration      = 2400
+            duration      = 1800
             repeatCount   = ValueAnimator.INFINITE
             repeatMode    = ValueAnimator.REVERSE
             interpolator  = AccelerateDecelerateInterpolator()
