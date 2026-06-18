@@ -15,6 +15,7 @@ import org.json.JSONObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
 
 class NegativeResponsesActivity : AppCompatActivity() {
 
@@ -62,7 +63,7 @@ class NegativeResponsesActivity : AppCompatActivity() {
                     }
 
                     // Save correct answer to Room DB
-                    CoroutineScope(Dispatchers.IO).launch {
+                    lifecycleScope.launch(Dispatchers.IO) {
                         AppDatabase.getInstance(this@NegativeResponsesActivity)
                             .knowledgeDao()
                             .insert(KnowledgeEntity(question.lowercase().trim(), correct))
