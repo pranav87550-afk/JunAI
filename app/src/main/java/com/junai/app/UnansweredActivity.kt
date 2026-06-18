@@ -9,6 +9,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONArray
@@ -100,7 +101,7 @@ class UnansweredActivity : AppCompatActivity() {
     }
 
     private fun saveToKnowledge(question: String, answer: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             AppDatabase.getInstance(this@UnansweredActivity)
                 .knowledgeDao()
                 .insert(KnowledgeEntity(question.lowercase().trim(), answer))
@@ -124,7 +125,7 @@ class UnansweredActivity : AppCompatActivity() {
 
     companion object {
         fun addQuestion(context: android.content.Context, question: String) {
-            kotlinx.coroutines.GlobalScope.launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 val prefs = context.getSharedPreferences("unanswered_prefs", android.content.Context.MODE_PRIVATE)
                 val json = prefs.getString("questions_list", "[]") ?: "[]"
                 val array = org.json.JSONArray(json)
@@ -141,24 +142,14 @@ class UnansweredActivity : AppCompatActivity() {
             }
         }
 
-        fun getAnswer(context: android.content.Context, question: String): String? {
-            var answer: String? = null
-            val latch = java.util.concurrent.CountDownLatch(1)
-            kotlinx.coroutines.GlobalScope.launch {
-                try {
-                    answer = AppDatabase.getInstance(context)
-                        .knowledgeDao()
-                        .getAnswer(question.lowercase().trim())
-                } finally {
-                    latch.countDown()
-                }
-            }
-            latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
-            return answer
+        suspend fun getAnswer(context: android.content.Context, question: String): String? {
+            return AppDatabase.getInstance(context)
+                .knowledgeDao()
+                .getAnswer(question.lowercase().trim())
         }
 
         fun saveAnswer(context: android.content.Context, question: String, answer: String) {
-            kotlinx.coroutines.GlobalScope.launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 AppDatabase.getInstance(context)
                     .knowledgeDao()
                     .insert(KnowledgeEntity(question.lowercase().trim(), answer))
