@@ -137,6 +137,19 @@ class MusicPlayerActivity : AppCompatActivity() {
         return "%d:%02d".format(minutes, seconds)
     }
 
+    override fun onResume() {
+    super.onResume()
+    if (isBound) {
+        updateUI()
+        startUpdating()
+    }
+}
+
+override fun onPause() {
+    super.onPause()
+    handler.removeCallbacksAndMessages(null)
+}
+
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         if (isBound) unbindService(serviceConnection)
