@@ -122,10 +122,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             startActivity(Intent(this, MusicHomeActivity::class.java))
         }
-        findViewById<TextView>(R.id.menuUnanswered).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, UnansweredActivity::class.java))
-        }
         findViewById<TextView>(R.id.menuNegative).setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.START)
             startActivity(Intent(this, NegativeResponsesActivity::class.java))
