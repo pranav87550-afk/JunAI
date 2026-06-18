@@ -111,17 +111,6 @@
                 android:background="@drawable/settings_button_red"
                 android:layout_marginBottom="24dp"/>
 
-            <!-- Save Button -->
-            <Button
-                android:id="@+id/saveReminderButton"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="Save"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:background="@drawable/settings_button_green"
-                android:layout_marginBottom="24dp"/>
-
             <!-- Active Reminders -->
             <TextView
                 android:layout_width="wrap_content"
