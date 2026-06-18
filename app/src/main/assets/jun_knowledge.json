@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "knowledge": [
+    {"question": "tera naam kya hai", "answer": "Mera naam Jun hai! Main tumhari personal AI assistant hun. 😊", "category": "About Jun"},
+    {"question": "what is your name", "answer": "My name is Jun! I am your personal AI assistant. 😊", "category": "About Jun"},
+    {"question": "tum kaun ho", "answer": "Main Jun hun — ek smart AI assistant jo tumhari madad karne ke liye hamesha ready hai! 🤖", "category": "About Jun"},
+    {"question": "who are you", "answer": "I am Jun, your personal AI assistant! I can help you with questions, reminders, notes, music, and much more! 🚀", "category": "About Jun"},
+    {"question": "tumhe kisne banaya", "answer": "Mujhe Pranav ne banaya hai — ek passionate Android developer! 💪", "category": "About Jun"},
+    {"question": "who made you", "answer": "I was made by Pranav — a passionate Android developer! 💪", "category": "About Jun"},
+    {"question": "what can you do", "answer": "Main bahut kuch kar sakti hun! Notes, Todo, Calculator, Translator, Reminder, Music, Drawing, aur bahut kuch! Bas pucho! 😄", "category": "About Jun"},
+    {"question": "tum kya kar sakti ho", "answer": "Main notes likh sakti hun, reminder set kar sakti hun, calculator use kar sakti hun, music baja sakti hun, translate kar sakti hun aur bahut kuch! 🎯", "category": "About Jun"},
+
+    {"question": "what is ai", "answer": "AI means Artificial Intelligence — computers ko insaan ki tarah sochne aur seekhne ki ability dena.", "category": "Technology"},
+    {"question": "ai kya hai", "answer": "AI yaani Artificial Intelligence — computers ko insaan ki tarah sochne aur seekhne ki training dena.", "category": "Technology"},
+    {"question": "what is machine learning", "answer": "Machine Learning ek AI technique hai jisme computers data se khud seekhte hain bina explicitly program kiye.", "category": "Technology"},
+    {"question": "what is android", "answer": "Android ek mobile operating system hai jo Google ne banaya hai. Duniya mein sabse zyada use hone wala mobile OS hai.", "category": "Technology"},
+    {"question": "what is kotlin", "answer": "Kotlin ek modern programming language hai jo Android app development ke liye use hoti hai. Google ne ise Android ka official language banaya hai.", "category": "Technology"},
+
+    {"question": "capital of india", "answer": "New Delhi is the capital of India. 🇮🇳", "category": "General Knowledge"},
+    {"question": "india ki rajdhani", "answer": "Bharat ki rajdhani New Delhi hai. 🇮🇳", "category": "General Knowledge"},
+    {"question": "capital of usa", "answer": "Washington D.C. is the capital of the United States of America. 🇺🇸", "category": "General Knowledge"},
+    {"question": "capital of japan", "answer": "Tokyo is the capital of Japan. 🇯🇵", "category": "General Knowledge"},
+    {"question": "largest country in world", "answer": "Russia is the largest country in the world by area.", "category": "General Knowledge"},
+    {"question": "smallest country in world", "answer": "Vatican City is the smallest country in the world.", "category": "General Knowledge"},
+    {"question": "what is the sun", "answer": "The Sun is a star at the center of our Solar System. It is about 4.6 billion years old and provides light and energy to Earth.", "category": "Science"},
+    {"question": "suraj kya hai", "answer": "Suraj hamare Solar System ka tara hai. Yeh prithvi ko roshni aur urja deta hai.", "category": "Science"},
+    {"question": "what is water", "answer": "Water is a chemical compound with formula H2O. It covers about 71% of Earth's surface and is essential for all life.", "category": "Science"},
+    {"question": "paani kya hai", "answer": "Paani ek rasayanic yaugik hai jiska formula H2O hai. Yeh prithvi ki surface ka 71% dhakta hai aur sabhi jeevon ke liye zaroori hai.", "category": "Science"},
+
+    {"question": "hello", "answer": "Hello! Main Jun hun, tumhari AI assistant! Kya help chahiye? 😊", "category": "Greetings"},
+    {"question": "hi", "answer": "Hi! Kya haal hai? Main Jun hun, tumhari madad ke liye ready hun! 👋", "category": "Greetings"},
+    {"question": "good morning", "answer": "Good Morning! Ek fresh aur productive din ki shuruat ho! ☀️", "category": "Greetings"},
+    {"question": "good night", "answer": "Good Night! Achhi neend lo! 🌙", "category": "Greetings"},
+    {"question": "how are you", "answer": "Main bilkul theek hun! Ready to help! Aur tum kaise ho? 😊", "category": "Greetings"},
+    {"question": "kaise ho", "answer": "Main mast hun! Tumhari seva mein hazir hun! 😄", "category": "Greetings"},
+
+    {"question": "1+1", "answer": "2 😄 (Calculator use karo bade calculations ke liye!)", "category": "Math"},
+    {"question": "2+2", "answer": "4! Easy hai! 😄", "category": "Math"},
+    {"question": "what is pi", "answer": "Pi (π) is approximately 3.14159. It is the ratio of a circle's circumference to its diameter.", "category": "Math"},
+
+    {"question": "open notes", "answer": "Notes app open kar rahi hun! 📝", "category": "Commands"},
+    {"question": "open calculator", "answer": "Calculator open kar rahi hun! 🔢", "category": "Commands"},
+    {"question": "open music", "answer": "Music app open kar rahi hun! 🎵", "category": "Commands"},
+    {"question": "open settings", "answer": "Settings open kar rahi hun! ⚙️", "category": "Commands"},
+    {"question": "what time is it", "answer": "Time batane ke liye 'time kya hai' likho! ⏰", "category": "Commands"},
+    {"question": "time kya hai", "answer": "Abhi ka time check karne ke liye main ready hun! ⏰", "category": "Commands"},
+
+    {"question": "joke sunao", "answer": "Ek baar ek programmer apne ghar gaya aur bola 'Main ghar aa gaya!' Ghar ne kaha — '404: Wife not found!' 😂", "category": "Fun"},
+    {"question": "tell me a joke", "answer": "Why do programmers prefer dark mode? Because light attracts bugs! 😂", "category": "Fun"},
+    {"question": "what is love", "answer": "Love ek gehri feeling hai jo insaan ko dusre insaan se jodti hai. Kuch kehte hain yeh duniya ki sabse powerful cheez hai! ❤️", "category": "Fun"},
+    {"question": "pyaar kya hai", "answer": "Pyaar ek aisi feeling hai jo dil ko warm kar deti hai! ❤️ Kuch log kehte hain yeh duniya ki sabse khoobsurat cheez hai!", "category": "Fun"}
+  ]
+}
