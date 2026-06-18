@@ -43,45 +43,58 @@ class DataManagementActivity : AppCompatActivity() {
     }
 
     private fun importJsonFile(uri: Uri) {
-        val resultText = findViewById<TextView>(R.id.importResult)
-        resultText.text = "Importing..."
-        resultText.setTextColor(android.graphics.Color.WHITE)
-        resultText.visibility = View.VISIBLE
+    val resultText = findViewById<TextView>(R.id.importResult)
+    resultText.text = "Importing..."
+    resultText.setTextColor(android.graphics.Color.WHITE)
+    resultText.visibility = View.VISIBLE
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val inputStream = contentResolver.openInputStream(uri)
-                val jsonString = inputStream?.bufferedReader()?.use { it.readText() } ?: ""
-                inputStream?.close()
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val jsonString = inputStream?.bufferedReader()?.use { it.readText() } ?: ""
+            inputStream?.close()
 
-                val jsonObj = JSONObject(jsonString)
-                val db = AppDatabase.getInstance(this@DataManagementActivity)
-                val dao = db.knowledgeDao()
+            val dao = AppDatabase.getInstance(this@DataManagementActivity).knowledgeDao()
+            val list = mutableListOf<KnowledgeEntity>()
 
-                val list = mutableListOf<KnowledgeEntity>()
+            val jsonObj = org.json.JSONObject(jsonString)
+
+            // New format check — {"knowledge": [...]}
+            if (jsonObj.has("knowledge")) {
+                val array = jsonObj.getJSONArray("knowledge")
+                for (i in 0 until array.length()) {
+                    val item = array.getJSONObject(i)
+                    val question = item.getString("question").lowercase().trim()
+                    val answer = item.getString("answer")
+                    val category = item.optString("category", "General")
+                    list.add(KnowledgeEntity(question, answer, category = category))
+                }
+            } else {
+                // Old format — {"question": "answer"}
                 val keys = jsonObj.keys()
                 while (keys.hasNext()) {
                     val key = keys.next()
                     val value = jsonObj.getString(key)
                     list.add(KnowledgeEntity(key.lowercase().trim(), value))
                 }
+            }
 
-                dao.insertAll(list)
-                val count = dao.getCount()
+            dao.insertAll(list)
+            val count = dao.getCount()
 
-                withContext(Dispatchers.Main) {
-                    resultText.text = "✅ Successfully imported ${list.size} questions!\nTotal: $count questions in Jun's memory"
-                    resultText.setTextColor(android.graphics.Color.parseColor("#2E7D32"))
-                    updateKnowledgeCount()
-                }
+            withContext(Dispatchers.Main) {
+                resultText.text = "✅ Imported ${list.size} questions!\nTotal: $count in Jun's memory"
+                resultText.setTextColor(android.graphics.Color.parseColor("#2E7D32"))
+                updateKnowledgeCount()
+            }
 
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    resultText.text = "❌ Import failed! Check JSON format.\n${e.message}"
-                    resultText.setTextColor(android.graphics.Color.parseColor("#E53935"))
-                }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                resultText.text = "❌ Import failed!\n${e.message}"
+                resultText.setTextColor(android.graphics.Color.parseColor("#E53935"))
             }
         }
+    }
     }
 
     private fun updateKnowledgeCount() {
