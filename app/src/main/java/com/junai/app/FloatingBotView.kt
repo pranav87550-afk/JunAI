@@ -70,10 +70,11 @@ class FloatingBotView(context: Context) : View(context) {
         color       = Color.parseColor("#FF69B4")
         maskFilter  = BlurMaskFilter(24f, BlurMaskFilter.Blur.OUTER)
     }
-    private val blushPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color      = Color.parseColor("#77FF8FAF")
-        style      = Paint.Style.FILL
-        maskFilter = BlurMaskFilter(14f, BlurMaskFilter.Blur.NORMAL)
+    private val blushDashPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color       = Color.parseColor("#CCFF8FAF")
+        style       = Paint.Style.STROKE
+        strokeCap   = Paint.Cap.ROUND
+        maskFilter  = BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL)
     }
 
     private var botBitmap: Bitmap? = null
@@ -136,40 +137,44 @@ class FloatingBotView(context: Context) : View(context) {
         drawEye(canvas, leftEyeCx,  eyeY, eyeR)
         drawEye(canvas, rightEyeCx, eyeY, eyeR)
 
-        // Blush — to the outer side of each eye, slightly below
-        private fun drawBlush(canvas: Canvas, cx: Float, cy: Float, eyeR: Float, left: Boolean) {
-    val dashPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color       = Color.parseColor("#CCFF8FAF")
-        style       = Paint.Style.STROKE
-        strokeWidth = eyeR * 0.28f
-        strokeCap   = Paint.Cap.ROUND
-        maskFilter  = BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL)
-    }
-    val offset = eyeR * 0.28f
-    val len    = eyeR * 0.55f
-    val sign   = if (left) -1f else 1f
+        // Blush — // style dashes below outer side of each eye
+        drawBlush(canvas, leftEyeCx,  eyeY + eyeR * 1.5f, eyeR, left = true)
+        drawBlush(canvas, rightEyeCx, eyeY + eyeR * 1.5f, eyeR, left = false)
 
-    // Two small parallel diagonal dashes  //
-    canvas.drawLine(
-        cx + sign * (eyeR * 0.3f),        cy - offset,
-        cx + sign * (eyeR * 0.3f + len),  cy - offset - len * 0.4f,
-        dashPaint
-    )
-    canvas.drawLine(
-        cx + sign * (eyeR * 0.05f),       cy + offset * 0.3f,
-        cx + sign * (eyeR * 0.05f + len), cy + offset * 0.3f - len * 0.4f,
-        dashPaint
-    )
-        }
-
-        // Mouth — below eyes
         drawMouth(canvas, vcx, eyeY + vh * 0.42f, vw * 0.20f)
     }
 
-    private fun drawBlush(canvas: Canvas, cx: Float, cy: Float, r: Float) {
-        canvas.drawCircle(cx, cy, r, blushPaint)
+    // ──────────────────────────────────────────────────────────
+    // BLUSH — // style dashes
+    // ──────────────────────────────────────────────────────────
+    private fun drawBlush(canvas: Canvas, cx: Float, cy: Float, eyeR: Float, left: Boolean) {
+        blushDashPaint.strokeWidth = eyeR * 0.28f
+
+        val offset = eyeR * 0.28f
+        val len    = eyeR * 0.55f
+        val sign   = if (left) -1f else 1f
+
+        // First dash
+        canvas.drawLine(
+            cx + sign * (eyeR * 0.3f),
+            cy - offset,
+            cx + sign * (eyeR * 0.3f + len),
+            cy - offset - len * 0.4f,
+            blushDashPaint
+        )
+        // Second dash (parallel, slightly below)
+        canvas.drawLine(
+            cx + sign * (eyeR * 0.05f),
+            cy + offset * 0.3f,
+            cx + sign * (eyeR * 0.05f + len),
+            cy + offset * 0.3f - len * 0.4f,
+            blushDashPaint
+        )
     }
 
+    // ──────────────────────────────────────────────────────────
+    // EYE
+    // ──────────────────────────────────────────────────────────
     private fun drawEye(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
         val scaleY = when (expression) {
             BotExpression.SLEEPING -> 0.08f
@@ -194,13 +199,14 @@ class FloatingBotView(context: Context) : View(context) {
         canvas.drawCircle(
             cx + px - pupilR * 0.22f,
             cy + py - pupilR * 0.22f,
-            pupilR * 0.28f, pupilGlintPaint
+            pupilR * 0.28f,
+            pupilGlintPaint
         )
         canvas.restore()
     }
 
     // ──────────────────────────────────────────────────────────
-    // PUPIL TRACKING — full screen coords
+    // PUPIL TRACKING
     // ──────────────────────────────────────────────────────────
     private fun getPupilOffset(eyeCx: Float, eyeCy: Float, maxOffset: Float): Pair<Float, Float> {
         if (touchScreenX < 0f || touchScreenY < 0f) return Pair(0f, 0f)
@@ -208,7 +214,6 @@ class FloatingBotView(context: Context) : View(context) {
         val loc = IntArray(2)
         getLocationOnScreen(loc)
 
-        // Eye position in screen coords
         val eyeScreenX = loc[0] + eyeCx
         val eyeScreenY = loc[1] + eyeCy
 
@@ -216,7 +221,6 @@ class FloatingBotView(context: Context) : View(context) {
         val dy   = touchScreenY - eyeScreenY
         val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(0.001f)
 
-        // Soft follow — pupils don't go full distance
         val move = min(dist * 0.4f, maxOffset)
         return Pair((dx / dist) * move, (dy / dist) * move)
     }
@@ -247,7 +251,6 @@ class FloatingBotView(context: Context) : View(context) {
     }
 
     private fun drawSmile(canvas: Canvas, cx: Float, cy: Float, hw: Float, curve: Float) {
-        // Simple clean U curve — reference jaisa
         val path = Path().apply {
             moveTo(cx - hw, cy)
             quadTo(cx, cy + hw * curve, cx + hw, cy)
@@ -268,7 +271,7 @@ class FloatingBotView(context: Context) : View(context) {
     }
 
     private fun drawSpeakMouth(canvas: Canvas, cx: Float, cy: Float, hw: Float) {
-        val openY    = cy + hw * 0.4f * mouthOpenAmount
+        val openY = cy + hw * 0.4f * mouthOpenAmount
         val fillPath = Path().apply {
             moveTo(cx - hw * 0.6f, cy)
             quadTo(cx, cy - hw * 0.08f, cx + hw * 0.6f, cy)
@@ -316,7 +319,10 @@ class FloatingBotView(context: Context) : View(context) {
     // ──────────────────────────────────────────────────────────
     // TTS HOOK
     // ──────────────────────────────────────────────────────────
-    fun startSpeaking() { expression = BotExpression.SPEAKING; animateMouth() }
+    fun startSpeaking() {
+        expression = BotExpression.SPEAKING
+        animateMouth()
+    }
 
     fun stopSpeaking() {
         expression = BotExpression.NEURAL
