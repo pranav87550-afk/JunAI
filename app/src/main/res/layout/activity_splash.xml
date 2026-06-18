@@ -34,5 +34,14 @@
         android:textColor="#E53935"
         android:textSize="13sp"
         android:letterSpacing="0.15"/>
-
+    
+   <TextView
+        android:id="@+id/loadingStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Loading Jun AI..."
+        android:textColor="#888888"
+        android:textSize="13sp"
+        android:layout_marginTop="8dp"/>
+    
 </RelativeLayout>
