@@ -28,9 +28,7 @@ class FloatingBotService : Service() {
 
     private lateinit var windowManager: WindowManager
     private lateinit var botView: FloatingBotView
-    private lateinit var touchOverlay: View
     private lateinit var botParams: WindowManager.LayoutParams
-    private lateinit var overlayParams: WindowManager.LayoutParams
 
     private var screenWidth  = 0
     private var screenHeight = 0
@@ -58,7 +56,7 @@ class FloatingBotService : Service() {
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        val dm = resources.displayMetrics
+        val dm       = resources.displayMetrics
         screenWidth  = dm.widthPixels
         screenHeight = dm.heightPixels
 
@@ -66,7 +64,6 @@ class FloatingBotService : Service() {
         val startX = screenWidth  - sizePx - 24
         val startY = screenHeight - sizePx - 180
 
-        // ── Bot params ────────────────────────────────────────
         botParams = WindowManager.LayoutParams(
             sizePx, sizePx,
             overlayType(),
@@ -79,33 +76,9 @@ class FloatingBotService : Service() {
             y = startY
         }
 
-        // ── Full screen transparent overlay — always active ──
-        // FLAG_NOT_FOCUSABLE + FLAG_NOT_TOUCH_MODAL = touches
-        // pass through to apps below EXCEPT we still get them
-        overlayParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-            overlayType(),
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-            WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
-            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-        }
-
-        // Transparent view — catches all screen touches for pupil tracking
-        touchOverlay = View(this).apply {
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setOnTouchListener(overlayTouchListener)
-        }
-
         botView = FloatingBotView(this)
         botView.setOnTouchListener(botTouchListener)
 
-        // Overlay below, bot on top
-        windowManager.addView(touchOverlay, overlayParams)
         windowManager.addView(botView, botParams)
 
         bobbingBaseY = botParams.y
@@ -132,34 +105,13 @@ class FloatingBotService : Service() {
         super.onDestroy()
         bobbingAnimator?.cancel()
         botView.destroy()
-        if (botView.isAttachedToWindow)    windowManager.removeView(botView)
-        if (touchOverlay.isAttachedToWindow) windowManager.removeView(touchOverlay)
+        if (botView.isAttachedToWindow) windowManager.removeView(botView)
     }
 
     override fun onBind(intent: Intent?) = null
 
     // ──────────────────────────────────────────────────────────
-    // OVERLAY TOUCH — poori screen pe pupil tracking
-    // FLAG_WATCH_OUTSIDE_TOUCH se touches pass-through hote hain
-    // apps ko bhi milte hain, aur hume bhi
-    // ──────────────────────────────────────────────────────────
-    private val overlayTouchListener = View.OnTouchListener { _, event ->
-        when (event.action) {
-            MotionEvent.ACTION_DOWN,
-            MotionEvent.ACTION_MOVE -> {
-                botView.updateTouchPosition(event.rawX, event.rawY)
-            }
-            MotionEvent.ACTION_UP,
-            MotionEvent.ACTION_CANCEL -> {
-                botView.clearTouchPosition()
-            }
-        }
-        // Return false — touch pass through karo apps ko bhi
-        false
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // BOT TOUCH — drag handling
+    // BOT TOUCH — drag + pupil tracking
     // ──────────────────────────────────────────────────────────
     private val botTouchListener = View.OnTouchListener { _, event ->
         when (event.action) {
@@ -261,7 +213,6 @@ class FloatingBotService : Service() {
     private fun showBot() {
         mainHandler.post {
             if (!botView.isAttachedToWindow) {
-                windowManager.addView(touchOverlay, overlayParams)
                 windowManager.addView(botView, botParams)
                 startBobbing()
             }
@@ -271,8 +222,7 @@ class FloatingBotService : Service() {
     private fun hideBot() {
         mainHandler.post {
             stopBobbing()
-            if (botView.isAttachedToWindow)      windowManager.removeView(botView)
-            if (touchOverlay.isAttachedToWindow) windowManager.removeView(touchOverlay)
+            if (botView.isAttachedToWindow) windowManager.removeView(botView)
         }
     }
 
