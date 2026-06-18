@@ -137,8 +137,30 @@ class FloatingBotView(context: Context) : View(context) {
         drawEye(canvas, rightEyeCx, eyeY, eyeR)
 
         // Blush — to the outer side of each eye, slightly below
-        drawBlush(canvas, leftEyeCx  - eyeR * 1.1f, eyeY + eyeR * 1.4f, eyeR * 0.85f)
-        drawBlush(canvas, rightEyeCx + eyeR * 1.1f, eyeY + eyeR * 1.4f, eyeR * 0.85f)
+        private fun drawBlush(canvas: Canvas, cx: Float, cy: Float, eyeR: Float, left: Boolean) {
+    val dashPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color       = Color.parseColor("#CCFF8FAF")
+        style       = Paint.Style.STROKE
+        strokeWidth = eyeR * 0.28f
+        strokeCap   = Paint.Cap.ROUND
+        maskFilter  = BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL)
+    }
+    val offset = eyeR * 0.28f
+    val len    = eyeR * 0.55f
+    val sign   = if (left) -1f else 1f
+
+    // Two small parallel diagonal dashes  //
+    canvas.drawLine(
+        cx + sign * (eyeR * 0.3f),        cy - offset,
+        cx + sign * (eyeR * 0.3f + len),  cy - offset - len * 0.4f,
+        dashPaint
+    )
+    canvas.drawLine(
+        cx + sign * (eyeR * 0.05f),       cy + offset * 0.3f,
+        cx + sign * (eyeR * 0.05f + len), cy + offset * 0.3f - len * 0.4f,
+        dashPaint
+    )
+        }
 
         // Mouth — below eyes
         drawMouth(canvas, vcx, eyeY + vh * 0.42f, vw * 0.20f)
