@@ -15,7 +15,7 @@ class FloatingBotService : Service() {
     companion object {
         const val CHANNEL_ID     = "floating_bot_channel"
         const val NOTIF_ID       = 42
-        const val BOT_SIZE_DP    = 240
+        const val BOT_SIZE_DP    = 210
         const val SNAP_ANIM_MS   = 320L
 
         const val ACTION_SHOW        = "ACTION_SHOW"
@@ -25,16 +25,9 @@ class FloatingBotService : Service() {
         const val ACTION_SPEAK_START = "ACTION_SPEAK_START"
         const val ACTION_SPEAK_STOP  = "ACTION_SPEAK_STOP"
 
-        // Touch tracking from AccessibilityService
-        const val ACTION_TOUCH_UPDATE = "ACTION_TOUCH_UPDATE"
-        const val ACTION_TOUCH_CLEAR  = "ACTION_TOUCH_CLEAR"
-        const val EXTRA_TOUCH_X       = "extra_touch_x"
-        const val EXTRA_TOUCH_Y       = "extra_touch_y"
-
-        // Eye mode prefs
-        const val PREFS_NAME         = "mini_jun_prefs"
-        const val KEY_RANDOM_EYE     = "random_eye_enabled"
-        const val KEY_TOUCH_EYE      = "touch_eye_enabled"
+        const val PREFS_NAME     = "mini_jun_prefs"
+        const val KEY_RANDOM_EYE = "random_eye_enabled"
+        const val KEY_TOUCH_EYE  = "touch_eye_enabled"
     }
 
     private lateinit var windowManager: WindowManager
@@ -99,6 +92,16 @@ class FloatingBotService : Service() {
 
         bobbingBaseY = botParams.y
         startBobbing()
+
+        // Accessibility direct callback — no Intent overhead
+        JunAccessibilityService.onTouch = { x, y ->
+            if (botView.touchEyeEnabled) {
+                botView.updateTouchPosition(x, y)
+            }
+        }
+        JunAccessibilityService.onTouchClear = {
+            botView.clearTouchPosition()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -107,20 +110,7 @@ class FloatingBotService : Service() {
             ACTION_SHOW        -> showBot()
             ACTION_SPEAK_START -> mainHandler.post { botView.startSpeaking() }
             ACTION_SPEAK_STOP  -> mainHandler.post { botView.stopSpeaking() }
-
-            // Touch from AccessibilityService
-            ACTION_TOUCH_UPDATE -> {
-                if (botView.touchEyeEnabled) {
-                    val x = intent.getFloatExtra(EXTRA_TOUCH_X, -1f)
-                    val y = intent.getFloatExtra(EXTRA_TOUCH_Y, -1f)
-                    mainHandler.post { botView.updateTouchPosition(x, y) }
-                }
-            }
-            ACTION_TOUCH_CLEAR -> {
-                mainHandler.post { botView.clearTouchPosition() }
-            }
-
-            ACTION_EXPRESSION -> {
+            ACTION_EXPRESSION  -> {
                 val name = intent.getStringExtra(EXTRA_EXPRESSION) ?: return START_STICKY
                 val expr = try { BotExpression.valueOf(name) }
                            catch (e: Exception) { BotExpression.NEURAL }
@@ -135,12 +125,15 @@ class FloatingBotService : Service() {
         bobbingAnimator?.cancel()
         botView.destroy()
         if (botView.isAttachedToWindow) windowManager.removeView(botView)
+        // Cleanup callbacks
+        JunAccessibilityService.onTouch      = null
+        JunAccessibilityService.onTouchClear = null
     }
 
     override fun onBind(intent: Intent?) = null
 
     // ──────────────────────────────────────────────────────────
-    // BOT TOUCH — drag + local pupil tracking
+    // BOT TOUCH — drag
     // ──────────────────────────────────────────────────────────
     private val botTouchListener = View.OnTouchListener { _, event ->
         when (event.action) {
@@ -196,7 +189,10 @@ class FloatingBotService : Service() {
     private fun snapToEdge() {
         val botSize = botParams.width
         val midX    = botParams.x + botSize / 2
-        val targetX = if (midX < screenWidth / 2) -botSize / 8 else screenWidth - botSize + botSize / 8
+        val targetX = if (midX < screenWidth / 2)
+            -botSize / 8
+        else
+            screenWidth - botSize + botSize / 8
         val startX  = botParams.x
 
         ValueAnimator.ofInt(startX, targetX).apply {
