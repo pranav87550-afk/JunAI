@@ -24,6 +24,17 @@ class FloatingBotService : Service() {
         const val EXTRA_EXPRESSION   = "extra_expression"
         const val ACTION_SPEAK_START = "ACTION_SPEAK_START"
         const val ACTION_SPEAK_STOP  = "ACTION_SPEAK_STOP"
+
+        // Touch tracking from AccessibilityService
+        const val ACTION_TOUCH_UPDATE = "ACTION_TOUCH_UPDATE"
+        const val ACTION_TOUCH_CLEAR  = "ACTION_TOUCH_CLEAR"
+        const val EXTRA_TOUCH_X       = "extra_touch_x"
+        const val EXTRA_TOUCH_Y       = "extra_touch_y"
+
+        // Eye mode prefs
+        const val PREFS_NAME         = "mini_jun_prefs"
+        const val KEY_RANDOM_EYE     = "random_eye_enabled"
+        const val KEY_TOUCH_EYE      = "touch_eye_enabled"
     }
 
     private lateinit var windowManager: WindowManager
@@ -79,6 +90,11 @@ class FloatingBotService : Service() {
         botView = FloatingBotView(this)
         botView.setOnTouchListener(botTouchListener)
 
+        // Load eye preferences
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        botView.randomEyeEnabled = prefs.getBoolean(KEY_RANDOM_EYE, false)
+        botView.touchEyeEnabled  = prefs.getBoolean(KEY_TOUCH_EYE,  false)
+
         windowManager.addView(botView, botParams)
 
         bobbingBaseY = botParams.y
@@ -91,7 +107,20 @@ class FloatingBotService : Service() {
             ACTION_SHOW        -> showBot()
             ACTION_SPEAK_START -> mainHandler.post { botView.startSpeaking() }
             ACTION_SPEAK_STOP  -> mainHandler.post { botView.stopSpeaking() }
-            ACTION_EXPRESSION  -> {
+
+            // Touch from AccessibilityService
+            ACTION_TOUCH_UPDATE -> {
+                if (botView.touchEyeEnabled) {
+                    val x = intent.getFloatExtra(EXTRA_TOUCH_X, -1f)
+                    val y = intent.getFloatExtra(EXTRA_TOUCH_Y, -1f)
+                    mainHandler.post { botView.updateTouchPosition(x, y) }
+                }
+            }
+            ACTION_TOUCH_CLEAR -> {
+                mainHandler.post { botView.clearTouchPosition() }
+            }
+
+            ACTION_EXPRESSION -> {
                 val name = intent.getStringExtra(EXTRA_EXPRESSION) ?: return START_STICKY
                 val expr = try { BotExpression.valueOf(name) }
                            catch (e: Exception) { BotExpression.NEURAL }
@@ -111,7 +140,7 @@ class FloatingBotService : Service() {
     override fun onBind(intent: Intent?) = null
 
     // ──────────────────────────────────────────────────────────
-    // BOT TOUCH — drag + pupil tracking
+    // BOT TOUCH — drag + local pupil tracking
     // ──────────────────────────────────────────────────────────
     private val botTouchListener = View.OnTouchListener { _, event ->
         when (event.action) {
@@ -122,7 +151,9 @@ class FloatingBotService : Service() {
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
                 isDragging    = false
-                botView.updateTouchPosition(event.rawX, event.rawY)
+                if (botView.touchEyeEnabled) {
+                    botView.updateTouchPosition(event.rawX, event.rawY)
+                }
                 true
             }
 
@@ -141,15 +172,17 @@ class FloatingBotService : Service() {
                     windowManager.updateViewLayout(botView, botParams)
                 }
 
-                botView.updateTouchPosition(event.rawX, event.rawY)
+                if (botView.touchEyeEnabled) {
+                    botView.updateTouchPosition(event.rawX, event.rawY)
+                }
                 true
             }
 
             MotionEvent.ACTION_UP,
             MotionEvent.ACTION_CANCEL -> {
                 if (isDragging) snapToEdge()
-                else botView.clearTouchPosition()
                 isDragging = false
+                botView.clearTouchPosition()
                 true
             }
 
