@@ -13,26 +13,27 @@ class JunAccessibilityService : AccessibilityService() {
         var instance: JunAccessibilityService? = null
             private set
 
-        // Direct callback — no Intent overhead
         var onTouch: ((Float, Float) -> Unit)? = null
         var onTouchClear: (() -> Unit)? = null
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
-
-    // Throttle — har 32ms pe ek update (30fps enough hai)
     private var lastUpdateMs = 0L
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
 
-        serviceInfo = serviceInfo?.also {
-            it.flags         = AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
-            it.eventTypes    = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-            it.feedbackType  = AccessibilityServiceInfo.FEEDBACK_GENERIC
-            it.notificationTimeout = 0
+        // Touch events ke liye correct flags
+        val info = AccessibilityServiceInfo().apply {
+            eventTypes    = AccessibilityEvent.TYPES_ALL_MASK
+            feedbackType  = AccessibilityServiceInfo.FEEDBACK_GENERIC
+            flags         = AccessibilityServiceInfo.FLAG_REQUEST_TOUCH_EXPLORATION_MODE or
+                            AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
+                            AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+            notificationTimeout = 0
         }
+        serviceInfo = info
     }
 
     override fun onDestroy() {
@@ -42,9 +43,6 @@ class JunAccessibilityService : AccessibilityService() {
         onTouchClear = null
     }
 
-    // ──────────────────────────────────────────────────────────
-    // TOUCH — throttled, non-blocking
-    // ──────────────────────────────────────────────────────────
     override fun onMotionEvent(event: MotionEvent) {
         super.onMotionEvent(event)
 
@@ -52,20 +50,15 @@ class JunAccessibilityService : AccessibilityService() {
             MotionEvent.ACTION_DOWN,
             MotionEvent.ACTION_MOVE -> {
                 val now = System.currentTimeMillis()
-                if (now - lastUpdateMs < 32L) return  // throttle 30fps
+                if (now - lastUpdateMs < 32L) return
                 lastUpdateMs = now
-
                 val x = event.rawX
                 val y = event.rawY
-                mainHandler.post {
-                    onTouch?.invoke(x, y)
-                }
+                mainHandler.post { onTouch?.invoke(x, y) }
             }
             MotionEvent.ACTION_UP,
             MotionEvent.ACTION_CANCEL -> {
-                mainHandler.post {
-                    onTouchClear?.invoke()
-                }
+                mainHandler.post { onTouchClear?.invoke() }
             }
         }
     }
