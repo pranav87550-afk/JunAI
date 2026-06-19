@@ -196,7 +196,7 @@ class FloatingBotService : Service() {
     private fun snapToEdge() {
         val botSize = botParams.width
         val midX    = botParams.x + botSize / 2
-        val targetX = if (midX < screenWidth / 2) 0 else screenWidth - botSize
+        val targetX = if (midX < screenWidth / 2) -botSize / 8 else screenWidth - botSize + botSize / 8
         val startX  = botParams.x
 
         ValueAnimator.ofInt(startX, targetX).apply {
