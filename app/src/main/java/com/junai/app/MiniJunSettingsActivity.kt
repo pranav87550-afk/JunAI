@@ -20,6 +20,7 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         const val KEY_MINI_JUN_ENABLED = "mini_jun_enabled"
         const val KEY_RANDOM_EYE       = "random_eye_enabled"
         const val KEY_TOUCH_EYE        = "touch_eye_enabled"
+        const val KEY_ROAMING          = "roaming_enabled"
     }
 
     private lateinit var miniJunSwitch:   Switch
@@ -39,11 +40,12 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         // Load saved state
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         miniJunSwitch.isChecked   = prefs.getBoolean(KEY_MINI_JUN_ENABLED, false)
+        roamSwitch.isChecked      = prefs.getBoolean(KEY_ROAMING, false)
         randomEyeSwitch.isChecked = prefs.getBoolean(KEY_RANDOM_EYE, false)
-        touchEyeSwitch.isChecked  = false // always off — coming soon
+        touchEyeSwitch.isChecked  = false
 
         updateSwitchColor(miniJunSwitch,   miniJunSwitch.isChecked)
-        updateSwitchColor(roamSwitch,      false)
+        updateSwitchColor(roamSwitch,      roamSwitch.isChecked)
         updateSwitchColor(randomEyeSwitch, randomEyeSwitch.isChecked)
         updateSwitchColor(touchEyeSwitch,  false)
 
@@ -60,21 +62,35 @@ class MiniJunSettingsActivity : AppCompatActivity() {
             }
         }
 
-        // ── Roam — Coming Soon ────────────────────────────────
+        // ── Roaming ───────────────────────────────────────────
         roamSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateSwitchColor(roamSwitch, isChecked)
+            saveBoolean(KEY_ROAMING, isChecked)
+
             if (isChecked) {
-                roamSwitch.isChecked = false
-                updateSwitchColor(roamSwitch, false)
-                Toast.makeText(this, "Coming Soon!", Toast.LENGTH_SHORT).show()
+                // Roaming on hone pe random eye off — bot khud move karega
+                randomEyeSwitch.isChecked = false
+                updateSwitchColor(randomEyeSwitch, false)
+                saveBoolean(KEY_RANDOM_EYE, false)
+                Toast.makeText(this, "Jun ab ghumega!", Toast.LENGTH_SHORT).show()
             }
+
+            restartBotService()
         }
 
         // ── Random Eye Movement ───────────────────────────────
         randomEyeSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateSwitchColor(randomEyeSwitch, isChecked)
+
+            if (isChecked && roamSwitch.isChecked) {
+                // Roaming chal raha hai — random eye allowed nahi
+                roamSwitch.isChecked = false
+                updateSwitchColor(roamSwitch, false)
+                saveBoolean(KEY_ROAMING, false)
+            }
+
             saveBoolean(KEY_RANDOM_EYE, isChecked)
-            notifyBotEyeMode()
+            restartBotService()
         }
 
         // ── Touch Tracking — Coming Soon ──────────────────────
@@ -93,16 +109,6 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         if (miniJunSwitch.isChecked && hasOverlayPermission()) {
             startBotService()
             saveBoolean(KEY_MINI_JUN_ENABLED, true)
-        }
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // NOTIFY BOT — eye mode change
-    // ──────────────────────────────────────────────────────────
-    private fun notifyBotEyeMode() {
-        if (miniJunSwitch.isChecked && hasOverlayPermission()) {
-            stopBotService()
-            startBotService()
         }
     }
 
@@ -165,6 +171,14 @@ class MiniJunSettingsActivity : AppCompatActivity() {
 
     private fun stopBotService() {
         stopService(Intent(this, FloatingBotService::class.java))
+    }
+
+    private fun restartBotService() {
+        if (miniJunSwitch.isChecked && hasOverlayPermission()) {
+            stopBotService()
+            android.os.Handler(android.os.Looper.getMainLooper())
+                .postDelayed({ startBotService() }, 300)
+        }
     }
 
     // ──────────────────────────────────────────────────────────
