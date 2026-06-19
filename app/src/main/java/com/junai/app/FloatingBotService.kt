@@ -15,7 +15,7 @@ class FloatingBotService : Service() {
     companion object {
         const val CHANNEL_ID     = "floating_bot_channel"
         const val NOTIF_ID       = 42
-        const val BOT_SIZE_DP    = 130
+        const val BOT_SIZE_DP    = 200
         const val SNAP_ANIM_MS   = 320L
 
         const val ACTION_SHOW        = "ACTION_SHOW"
