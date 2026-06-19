@@ -9,6 +9,8 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.animation.ValueAnimator
 import androidx.core.app.NotificationCompat
+import kotlin.math.*
+import kotlin.random.Random
 
 class FloatingBotService : Service() {
 
@@ -28,6 +30,7 @@ class FloatingBotService : Service() {
         const val PREFS_NAME     = "mini_jun_prefs"
         const val KEY_RANDOM_EYE = "random_eye_enabled"
         const val KEY_TOUCH_EYE  = "touch_eye_enabled"
+        const val KEY_ROAMING    = "roaming_enabled"
     }
 
     private lateinit var windowManager: WindowManager
@@ -36,6 +39,7 @@ class FloatingBotService : Service() {
 
     private var screenWidth  = 0
     private var screenHeight = 0
+    private var botSizePx    = 0
 
     // Drag state
     private var initialX      = 0
@@ -47,6 +51,17 @@ class FloatingBotService : Service() {
     // Bobbing
     private var bobbingAnimator: ValueAnimator? = null
     private var bobbingBaseY = 0
+
+    // Roaming
+    private var roamingEnabled   = false
+    private var roamAnimX:   ValueAnimator? = null
+    private var roamAnimY:   ValueAnimator? = null
+    private var roamHandler      = Handler(Looper.getMainLooper())
+    private var roamRunnable: Runnable? = null
+    private var currentRoamX    = 0f
+    private var currentRoamY    = 0f
+    private var targetRoamX     = 0f
+    private var targetRoamY     = 0f
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -63,13 +78,13 @@ class FloatingBotService : Service() {
         val dm       = resources.displayMetrics
         screenWidth  = dm.widthPixels
         screenHeight = dm.heightPixels
+        botSizePx    = (BOT_SIZE_DP * dm.density).toInt()
 
-        val sizePx = (BOT_SIZE_DP * dm.density).toInt()
-        val startX = screenWidth  - sizePx - 24
-        val startY = screenHeight - sizePx - 180
+        val startX = screenWidth  - botSizePx - 24
+        val startY = screenHeight - botSizePx - 180
 
         botParams = WindowManager.LayoutParams(
-            sizePx, sizePx,
+            botSizePx, botSizePx,
             overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -83,21 +98,21 @@ class FloatingBotService : Service() {
         botView = FloatingBotView(this)
         botView.setOnTouchListener(botTouchListener)
 
-        // Load eye preferences
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         botView.randomEyeEnabled = prefs.getBoolean(KEY_RANDOM_EYE, false)
         botView.touchEyeEnabled  = prefs.getBoolean(KEY_TOUCH_EYE,  false)
+        roamingEnabled           = prefs.getBoolean(KEY_ROAMING,    false)
 
         windowManager.addView(botView, botParams)
 
+        currentRoamX = botParams.x.toFloat()
+        currentRoamY = botParams.y.toFloat()
         bobbingBaseY = botParams.y
-        startBobbing()
 
-        // Accessibility direct callback — no Intent overhead
+        if (roamingEnabled) startRoaming() else startBobbing()
+
         JunAccessibilityService.onTouch = { x, y ->
-            if (botView.touchEyeEnabled) {
-                botView.updateTouchPosition(x, y)
-            }
+            if (botView.touchEyeEnabled) botView.updateTouchPosition(x, y)
         }
         JunAccessibilityService.onTouchClear = {
             botView.clearTouchPosition()
@@ -122,10 +137,10 @@ class FloatingBotService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        stopRoaming()
         bobbingAnimator?.cancel()
         botView.destroy()
         if (botView.isAttachedToWindow) windowManager.removeView(botView)
-        // Cleanup callbacks
         JunAccessibilityService.onTouch      = null
         JunAccessibilityService.onTouchClear = null
     }
@@ -133,20 +148,20 @@ class FloatingBotService : Service() {
     override fun onBind(intent: Intent?) = null
 
     // ──────────────────────────────────────────────────────────
-    // BOT TOUCH — drag
+    // BOT TOUCH
     // ──────────────────────────────────────────────────────────
     private val botTouchListener = View.OnTouchListener { _, event ->
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                stopBobbing()
+                // Pause roaming + bobbing on drag
+                if (roamingEnabled) pauseRoaming()
+                else stopBobbing()
+
                 initialX      = botParams.x
                 initialY      = botParams.y
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
                 isDragging    = false
-                if (botView.touchEyeEnabled) {
-                    botView.updateTouchPosition(event.rawX, event.rawY)
-                }
                 true
             }
 
@@ -155,27 +170,32 @@ class FloatingBotService : Service() {
                 val dy = event.rawY - initialTouchY
 
                 if (!isDragging &&
-                    (kotlin.math.abs(dx) > 8f || kotlin.math.abs(dy) > 8f)) {
-                    isDragging = true
-                }
+                    (abs(dx) > 8f || abs(dy) > 8f)) isDragging = true
 
                 if (isDragging) {
                     botParams.x = (initialX + dx).toInt()
                     botParams.y = (initialY + dy).toInt()
                     windowManager.updateViewLayout(botView, botParams)
-                }
 
-                if (botView.touchEyeEnabled) {
-                    botView.updateTouchPosition(event.rawX, event.rawY)
+                    // Eyes follow drag direction
+                    botView.setRoamDirection(dx, dy)
                 }
                 true
             }
 
             MotionEvent.ACTION_UP,
             MotionEvent.ACTION_CANCEL -> {
-                if (isDragging) snapToEdge()
                 isDragging = false
-                botView.clearTouchPosition()
+                botView.clearRoamDirection()
+
+                if (roamingEnabled) {
+                    // Update current pos and resume roaming
+                    currentRoamX = botParams.x.toFloat()
+                    currentRoamY = botParams.y.toFloat()
+                    resumeRoaming()
+                } else {
+                    snapToEdge()
+                }
                 true
             }
 
@@ -184,15 +204,100 @@ class FloatingBotService : Service() {
     }
 
     // ──────────────────────────────────────────────────────────
-    // EDGE SNAP
+    // ROAMING
+    // ──────────────────────────────────────────────────────────
+    private fun startRoaming() {
+        stopBobbing()
+        roamToNextTarget()
+    }
+
+    private fun pauseRoaming() {
+        roamAnimX?.cancel()
+        roamAnimY?.cancel()
+        roamRunnable?.let { roamHandler.removeCallbacks(it) }
+    }
+
+    private fun resumeRoaming() {
+        roamToNextTarget()
+    }
+
+    private fun stopRoaming() {
+        roamAnimX?.cancel()
+        roamAnimY?.cancel()
+        roamRunnable?.let { roamHandler.removeCallbacks(it) }
+    }
+
+    private fun roamToNextTarget() {
+        if (!roamingEnabled || isDragging) return
+
+        // Pick random target — safe margins from edges
+        val margin = botSizePx * 0.3f
+        targetRoamX = Random.nextFloat() * (screenWidth  - botSizePx - margin * 2) + margin
+        targetRoamY = Random.nextFloat() * (screenHeight - botSizePx - margin * 2) + margin
+
+        val dx       = targetRoamX - currentRoamX
+        val dy       = targetRoamY - currentRoamY
+        val distance = sqrt(dx * dx + dy * dy)
+
+        // Speed: ~280dp/sec — medium feel
+        val speed    = 280f * resources.displayMetrics.density
+        val duration = ((distance / speed) * 1000f).toLong().coerceIn(1200, 3500)
+
+        // Tell eyes where we're heading
+        botView.setRoamDirection(dx, dy)
+
+        val fromX = currentRoamX
+        val fromY = currentRoamY
+
+        // Animate X
+        roamAnimX = ValueAnimator.ofFloat(fromX, targetRoamX).apply {
+            this.duration    = duration
+            interpolator     = AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                if (!isDragging) {
+                    currentRoamX = it.animatedValue as Float
+                    botParams.x  = currentRoamX.toInt()
+                    try { windowManager.updateViewLayout(botView, botParams) }
+                    catch (e: Exception) { }
+                }
+            }
+            start()
+        }
+
+        // Animate Y — slight delay for natural curve feel
+        roamAnimY = ValueAnimator.ofFloat(fromY, targetRoamY).apply {
+            this.duration    = duration
+            startDelay       = 80
+            interpolator     = AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                if (!isDragging) {
+                    currentRoamY = it.animatedValue as Float
+                    // Bobbing offset on top of roam
+                    botParams.y  = currentRoamY.toInt()
+                    try { windowManager.updateViewLayout(botView, botParams) }
+                    catch (e: Exception) { }
+                }
+            }
+            doOnEnd {
+                if (!isDragging) {
+                    botView.clearRoamDirection()
+                    // Random pause before next move — 800ms to 2500ms
+                    val pause = Random.nextLong(800, 2500)
+                    roamRunnable = Runnable { roamToNextTarget() }
+                    roamHandler.postDelayed(roamRunnable!!, pause)
+                }
+            }
+            start()
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // EDGE SNAP (non-roaming mode)
     // ──────────────────────────────────────────────────────────
     private fun snapToEdge() {
-        val botSize = botParams.width
-        val midX    = botParams.x + botSize / 2
+        val midX    = botParams.x + botSizePx / 2
         val targetX = if (midX < screenWidth / 2)
-            -botSize / 8
-        else
-            screenWidth - botSize + botSize / 8
+            -botSizePx / 8 else screenWidth - botSizePx + botSizePx / 8
         val startX  = botParams.x
 
         ValueAnimator.ofInt(startX, targetX).apply {
@@ -221,7 +326,7 @@ class FloatingBotService : Service() {
             repeatMode   = ValueAnimator.REVERSE
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                if (!isDragging) {
+                if (!isDragging && !roamingEnabled) {
                     botParams.y = bobbingBaseY + (it.animatedValue as Float).toInt()
                     windowManager.updateViewLayout(botView, botParams)
                 }
@@ -243,13 +348,14 @@ class FloatingBotService : Service() {
         mainHandler.post {
             if (!botView.isAttachedToWindow) {
                 windowManager.addView(botView, botParams)
-                startBobbing()
+                if (roamingEnabled) startRoaming() else startBobbing()
             }
         }
     }
 
     private fun hideBot() {
         mainHandler.post {
+            stopRoaming()
             stopBobbing()
             if (botView.isAttachedToWindow) windowManager.removeView(botView)
         }
