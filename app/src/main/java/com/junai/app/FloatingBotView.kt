@@ -119,19 +119,18 @@ class FloatingBotView(context: Context) : View(context) {
         val vcx = vr.centerX()
         val vcy = vr.centerY()
 
-        val eyeW = vw * 0.13f
-        val eyeH = vh * 0.30f
+        val eyeW = vw * 0.09f   // chota
+        val eyeH = vh * 0.20f   // chota
         val eyeY = vcy - vh * 0.08f
 
-        // Dono right shift
         val leftEyeCx  = vcx - vw * 0.15f
         val rightEyeCx = vcx + vw * 0.22f
 
-        drawEye(canvas, leftEyeCx,  eyeY, eyeW, eyeH)
-        drawEye(canvas, rightEyeCx, eyeY, eyeW, eyeH)
+drawEye(canvas, leftEyeCx,  eyeY, eyeW, eyeH)
+drawEye(canvas, rightEyeCx, eyeY, eyeW, eyeH)
 
-        // Mouth thoda upar
-        drawMouth(canvas, vcx, eyeY + vh * 0.38f, vw * 0.12f, vh * 0.08f)
+// Mouth upar + thoda right
+drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
     }
 
     // ──────────────────────────────────────────────────────────
