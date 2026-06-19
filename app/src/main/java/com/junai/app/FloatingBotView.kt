@@ -30,12 +30,13 @@ class FloatingBotView(context: Context) : View(context) {
     private var touchScreenY = -1f
 
     // Random idle pupil
-    private var idlePupilX   = 0f
-    private var idlePupilY   = 0f
+    private var idlePupilX = 0f
+    private var idlePupilY = 0f
     private var idleAnimator: ValueAnimator? = null
-    var randomEyeEnabled     = false
+
+    var randomEyeEnabled = false
         set(value) { field = value; if (value) startIdleEyes() else stopIdleEyes() }
-    var touchEyeEnabled      = false
+    var touchEyeEnabled = false
 
     // ─── Animators ────────────────────────────────────────────
     private var blinkAnimator:  ValueAnimator? = null
@@ -53,9 +54,9 @@ class FloatingBotView(context: Context) : View(context) {
         style = Paint.Style.FILL
     }
     private val mouthPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color       = Color.WHITE
-        style       = Paint.Style.FILL
-        maskFilter  = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
+        color      = Color.WHITE
+        style      = Paint.Style.FILL
+        maskFilter = BlurMaskFilter(2f, BlurMaskFilter.Blur.NORMAL)
     }
     private val visorGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style       = Paint.Style.STROKE
@@ -63,7 +64,6 @@ class FloatingBotView(context: Context) : View(context) {
         color       = Color.parseColor("#FF4444")
         maskFilter  = BlurMaskFilter(14f, BlurMaskFilter.Blur.OUTER)
     }
-    
 
     // ─── Bot image ────────────────────────────────────────────
     private var botBitmap: Bitmap? = null
@@ -91,20 +91,15 @@ class FloatingBotView(context: Context) : View(context) {
 
         visorRect.set(w * visorLeftF, h * visorTopF, w * visorRightF, h * visorBottomF)
 
-        // 1. Neon glow
-        drawNeonGlow(canvas, w, h)
-
-        // 2. Bot PNG
+        // 1. Bot PNG
         botBitmap?.let { canvas.drawBitmap(it, null, RectF(0f, 0f, w, h), null) }
 
-        // 3. Visor glow
+        // 2. Visor glow
         canvas.drawRoundRect(visorRect, 55f, 55f, visorGlowPaint)
 
-        // 4. Face
+        // 3. Face
         drawFace(canvas)
     }
-
-    
 
     // ──────────────────────────────────────────────────────────
     // FACE
@@ -116,9 +111,8 @@ class FloatingBotView(context: Context) : View(context) {
         val vcx = vr.centerX()
         val vcy = vr.centerY()
 
-        // Eye oval size — matching PNG white ovals
-        val eyeW       = vw * 0.16f   // half width of oval
-        val eyeH       = vh * 0.28f   // half height of oval
+        val eyeW       = vw * 0.16f
+        val eyeH       = vh * 0.28f
         val eyeSpacing = vw * 0.21f
         val eyeY       = vcy - vh * 0.08f
 
@@ -128,12 +122,12 @@ class FloatingBotView(context: Context) : View(context) {
         drawEye(canvas, leftEyeCx,  eyeY, eyeW, eyeH)
         drawEye(canvas, rightEyeCx, eyeY, eyeW, eyeH)
 
-        // Mouth — small filled U cup shape
+        // Mouth — small filled U cup
         drawMouth(canvas, vcx, eyeY + vh * 0.44f, vw * 0.13f, vh * 0.09f)
     }
 
     // ──────────────────────────────────────────────────────────
-    // EYE — oval shaped, pupils inside
+    // EYE
     // ──────────────────────────────────────────────────────────
     private fun drawEye(canvas: Canvas, cx: Float, cy: Float, ew: Float, eh: Float) {
         val scaleY = when (expression) {
@@ -143,8 +137,6 @@ class FloatingBotView(context: Context) : View(context) {
         }
 
         canvas.save()
-        // Clip to oval shape
-        val eyeOval = RectF(cx - ew, cy - eh, cx + ew, cy + eh)
         canvas.clipRect(cx - ew - 2f, cy - eh - 2f, cx + ew + 2f, cy + eh + 2f)
         canvas.scale(1f, scaleY, cx, cy)
 
@@ -211,7 +203,7 @@ class FloatingBotView(context: Context) : View(context) {
     }
 
     // ──────────────────────────────────────────────────────────
-    // IDLE RANDOM EYE MOVEMENT
+    // IDLE RANDOM EYE
     // ──────────────────────────────────────────────────────────
     private fun startIdleEyes() {
         stopIdleEyes()
@@ -220,22 +212,21 @@ class FloatingBotView(context: Context) : View(context) {
 
     private fun stopIdleEyes() {
         idleAnimator?.cancel()
-        idleAnimator  = null
-        idlePupilX    = 0f
-        idlePupilY    = 0f
+        idleAnimator = null
+        idlePupilX   = 0f
+        idlePupilY   = 0f
         invalidate()
     }
 
     private fun animateToNextIdleTarget() {
         if (!randomEyeEnabled) return
 
-        val targetX = Random.nextFloat() * 2f - 1f  // -1 to 1
+        val targetX = Random.nextFloat() * 2f - 1f
         val targetY = Random.nextFloat() * 2f - 1f
         val dur     = Random.nextLong(800, 2200)
         val pause   = Random.nextLong(400, 1800)
-
-        val fromX = idlePupilX
-        val fromY = idlePupilY
+        val fromX   = idlePupilX
+        val fromY   = idlePupilY
 
         idleAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration     = dur
@@ -248,7 +239,6 @@ class FloatingBotView(context: Context) : View(context) {
             }
             addListener(object : android.animation.Animator.AnimatorListener {
                 override fun onAnimationEnd(a: android.animation.Animator) {
-                    // Pause then move to next target
                     android.os.Handler(android.os.Looper.getMainLooper())
                         .postDelayed({ animateToNextIdleTarget() }, pause)
                 }
@@ -261,7 +251,7 @@ class FloatingBotView(context: Context) : View(context) {
     }
 
     // ──────────────────────────────────────────────────────────
-    // MOUTH — small filled U cup
+    // MOUTH
     // ──────────────────────────────────────────────────────────
     private fun drawMouth(canvas: Canvas, cx: Float, cy: Float, hw: Float, hh: Float) {
         when (expression) {
@@ -272,7 +262,6 @@ class FloatingBotView(context: Context) : View(context) {
     }
 
     private fun drawCupSmile(canvas: Canvas, cx: Float, cy: Float, hw: Float, hh: Float) {
-        // Filled U cup — flat top, rounded bottom
         val path = Path().apply {
             moveTo(cx - hw, cy)
             lineTo(cx - hw, cy + hh * 0.3f)
@@ -340,7 +329,10 @@ class FloatingBotView(context: Context) : View(context) {
     // ──────────────────────────────────────────────────────────
     // TTS HOOK
     // ──────────────────────────────────────────────────────────
-    fun startSpeaking() { expression = BotExpression.SPEAKING; animateMouth() }
+    fun startSpeaking() {
+        expression = BotExpression.SPEAKING
+        animateMouth()
+    }
 
     fun stopSpeaking() {
         expression      = BotExpression.NEURAL
