@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Crystal outer ring -->
+    <path
+        android:fillColor="#33FF4444"
+        android:pathData="M24,2 C11.85,2 2,11.85 2,24 C2,36.15 11.85,46 24,46 C36.15,46 46,36.15 46,24 C46,11.85 36.15,2 24,2 Z"/>
+
+    <!-- Crystal inner glow ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFF4444"
+        android:strokeWidth="1.5"
+        android:pathData="M24,5 C13.51,5 5,13.51 5,24 C5,34.49 13.51,43 24,43 C34.49,43 43,34.49 43,24 C43,13.51 34.49,5 24,5 Z"/>
+
+    <!-- Chat bubble -->
+    <path
+        android:fillColor="#FFFF6666"
+        android:pathData="M12,14 C12,12.9 12.9,12 14,12 L34,12 C35.1,12 36,12.9 36,14 L36,28 C36,29.1 35.1,30 34,30 L18,30 L12,36 L12,14 Z"/>
+
+    <!-- Chat dots -->
+    <path
+        android:fillColor="#FF0A0A0F"
+        android:pathData="M18,21 C18,22.1 17.1,23 16,23 C14.9,23 14,22.1 14,21 C14,19.9 14.9,19 16,19 C17.1,19 18,19.9 18,21 Z"/>
+    <path
+        android:fillColor="#FF0A0A0F"
+        android:pathData="M25,21 C25,22.1 24.1,23 23,23 C21.9,23 21,22.1 21,21 C21,19.9 21.9,19 23,19 C24.1,19 25,19.9 25,21 Z"/>
+    <path
+        android:fillColor="#FF0A0A0F"
+        android:pathData="M32,21 C32,22.1 31.1,23 30,23 C28.9,23 28,22.1 28,21 C28,19.9 28.9,19 30,19 C31.1,19 32,19.9 32,21 Z"/>
+
+    <!-- Crystal shine -->
+    <path
+        android:fillColor="#55FFFFFF"
+        android:pathData="M10,10 C12,7 17,6 20,8 C16,8 12,10 10,14 C9,12 9,11 10,10 Z"/>
+
+</vector>
