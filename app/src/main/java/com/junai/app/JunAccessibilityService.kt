@@ -12,7 +12,6 @@ class JunAccessibilityService : AccessibilityService() {
     companion object {
         var instance: JunAccessibilityService? = null
             private set
-
         var onTouch: ((Float, Float) -> Unit)? = null
         var onTouchClear: (() -> Unit)? = null
     }
@@ -24,33 +23,23 @@ class JunAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
 
-        // Touch events ke liye correct flags
         val info = AccessibilityServiceInfo().apply {
-            eventTypes    = AccessibilityEvent.TYPES_ALL_MASK
-            feedbackType  = AccessibilityServiceInfo.FEEDBACK_GENERIC
-            flags         = AccessibilityServiceInfo.FLAG_REQUEST_TOUCH_EXPLORATION_MODE or
-                            AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
-                            AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+            eventTypes          = AccessibilityEvent.TYPES_ALL_MASK
+            feedbackType        = AccessibilityServiceInfo.FEEDBACK_GENERIC
+            // Sirf filter key events — touch exploration NAHI
+            flags               = AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
             notificationTimeout = 0
         }
         serviceInfo = info
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        instance     = null
-        onTouch      = null
-        onTouchClear = null
-    }
-
     override fun onMotionEvent(event: MotionEvent) {
         super.onMotionEvent(event)
-
         when (event.action) {
             MotionEvent.ACTION_DOWN,
             MotionEvent.ACTION_MOVE -> {
                 val now = System.currentTimeMillis()
-                if (now - lastUpdateMs < 32L) return
+                if (now - lastUpdateMs < 48L) return  // ~20fps
                 lastUpdateMs = now
                 val x = event.rawX
                 val y = event.rawY
@@ -64,8 +53,12 @@ class JunAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) { }
+    override fun onInterrupt() { instance = null }
 
-    override fun onInterrupt() {
-        instance = null
+    override fun onDestroy() {
+        super.onDestroy()
+        instance     = null
+        onTouch      = null
+        onTouchClear = null
     }
 }
