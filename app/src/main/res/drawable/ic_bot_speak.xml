@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Crystal outer ring -->
+    <path
+        android:fillColor="#33FF4444"
+        android:pathData="M24,2 C11.85,2 2,11.85 2,24 C2,36.15 11.85,46 24,46 C36.15,46 46,36.15 46,24 C46,11.85 36.15,2 24,2 Z"/>
+
+    <!-- Crystal inner glow ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFF4444"
+        android:strokeWidth="1.5"
+        android:pathData="M24,5 C13.51,5 5,13.51 5,24 C5,34.49 13.51,43 24,43 C34.49,43 43,34.49 43,24 C43,13.51 34.49,5 24,5 Z"/>
+
+    <!-- Mic body -->
+    <path
+        android:fillColor="#FFFF6666"
+        android:pathData="M24,10 C21.24,10 19,12.24 19,15 L19,24 C19,26.76 21.24,29 24,29 C26.76,29 29,26.76 29,24 L29,15 C29,12.24 26.76,10 24,10 Z"/>
+
+    <!-- Mic arc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFF6666"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M14,24 C14,29.52 18.48,34 24,34 C29.52,34 34,29.52 34,24"/>
+
+    <!-- Mic stand line -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFF6666"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M24,34 L24,38"/>
+
+    <!-- Mic base -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFF6666"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M18,38 L30,38"/>
+
+    <!-- Crystal shine -->
+    <path
+        android:fillColor="#55FFFFFF"
+        android:pathData="M10,10 C12,7 17,6 20,8 C16,8 12,10 10,14 C9,12 9,11 10,10 Z"/>
+
+</vector>
