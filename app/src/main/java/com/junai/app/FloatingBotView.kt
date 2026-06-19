@@ -63,12 +63,7 @@ class FloatingBotView(context: Context) : View(context) {
         color       = Color.parseColor("#FF4444")
         maskFilter  = BlurMaskFilter(14f, BlurMaskFilter.Blur.OUTER)
     }
-    private val neonBodyGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style       = Paint.Style.STROKE
-        strokeWidth = 6f
-        color       = Color.parseColor("#CC4444")
-        maskFilter  = BlurMaskFilter(20f, BlurMaskFilter.Blur.OUTER)
-    }
+    
 
     // ─── Bot image ────────────────────────────────────────────
     private var botBitmap: Bitmap? = null
@@ -109,14 +104,7 @@ class FloatingBotView(context: Context) : View(context) {
         drawFace(canvas)
     }
 
-    private fun drawNeonGlow(canvas: Canvas, w: Float, h: Float) {
-        val cx = w / 2f
-        val cy = h * 0.50f
-        canvas.drawOval(
-            RectF(cx - w * 0.40f, cy - h * 0.38f, cx + w * 0.40f, cy + h * 0.38f),
-            neonBodyGlowPaint
-        )
-    }
+    
 
     // ──────────────────────────────────────────────────────────
     // FACE
