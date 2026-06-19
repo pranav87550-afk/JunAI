@@ -25,12 +25,19 @@ class FloatingBotView(context: Context) : View(context) {
     var mouthOpenAmount       = 0f
     var bobbingOffsetY        = 0f
 
+    // Touch tracking
     private var touchScreenX = -1f
     private var touchScreenY = -1f
 
+    // Random idle pupil
     private var idlePupilX = 0f
     private var idlePupilY = 0f
     private var idleAnimator: ValueAnimator? = null
+
+    // Roam direction pupil
+    private var roamDirX = 0f
+    private var roamDirY = 0f
+    private var isRoaming = false
 
     var randomEyeEnabled = false
         set(value) { field = value; if (value) startIdleEyes() else stopIdleEyes() }
@@ -41,6 +48,11 @@ class FloatingBotView(context: Context) : View(context) {
     private var mouthAnimator:  ValueAnimator? = null
     private var blinkScheduler: android.os.Handler? = null
     private var blinkRunnable:  Runnable? = null
+
+    // Smooth roam pupil interpolation
+    private var smoothRoamX = 0f
+    private var smoothRoamY = 0f
+    private var roamSmoothAnimator: ValueAnimator? = null
 
     // ─── Paints ───────────────────────────────────────────────
     private val eyeballPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -63,7 +75,7 @@ class FloatingBotView(context: Context) : View(context) {
 
     // ─── Bot image ────────────────────────────────────────────
     private var botBitmap: Bitmap? = null
-    private var destRect = RectF()
+    private var destRect  = RectF()
 
     init {
         setLayerType(LAYER_TYPE_SOFTWARE, null)
@@ -75,6 +87,54 @@ class FloatingBotView(context: Context) : View(context) {
         try {
             botBitmap = BitmapFactory.decodeResource(resources, R.drawable.jun_bot)
         } catch (e: Exception) { botBitmap = null }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // ROAM DIRECTION — service calls this
+    // ──────────────────────────────────────────────────────────
+    fun setRoamDirection(dx: Float, dy: Float) {
+        isRoaming = true
+        val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(0.001f)
+
+        // Normalize direction -1 to 1
+        val targetX = (dx / dist).coerceIn(-1f, 1f)
+        val targetY = (dy / dist).coerceIn(-1f, 1f)
+
+        // Smooth transition to new direction
+        roamSmoothAnimator?.cancel()
+        val fromX = smoothRoamX
+        val fromY = smoothRoamY
+
+        roamSmoothAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration     = 400
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                val t       = it.animatedValue as Float
+                smoothRoamX = fromX + (targetX - fromX) * t
+                smoothRoamY = fromY + (targetY - fromY) * t
+                invalidate()
+            }
+            start()
+        }
+    }
+
+    fun clearRoamDirection() {
+        isRoaming = false
+        // Smoothly return to center
+        roamSmoothAnimator?.cancel()
+        val fromX = smoothRoamX
+        val fromY = smoothRoamY
+        roamSmoothAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration     = 600
+            interpolator = android.view.animation.DecelerateInterpolator()
+            addUpdateListener {
+                val t       = it.animatedValue as Float
+                smoothRoamX = fromX * (1f - t)
+                smoothRoamY = fromY * (1f - t)
+                invalidate()
+            }
+            start()
+        }
     }
 
     // ──────────────────────────────────────────────────────────
@@ -97,7 +157,6 @@ class FloatingBotView(context: Context) : View(context) {
             destRect.set(left, top, left + drawW, top + drawH)
             canvas.drawBitmap(bmp, null, destRect, null)
 
-            // Visor relative to drawn image
             visorRect.set(
                 left + drawW * visorLeftF,
                 top  + drawH * visorTopF,
@@ -119,22 +178,21 @@ class FloatingBotView(context: Context) : View(context) {
         val vcx = vr.centerX()
         val vcy = vr.centerY()
 
-        val eyeW = vw * 0.09f   // chota
-        val eyeH = vh * 0.20f   // chota
+        val eyeW = vw * 0.09f
+        val eyeH = vh * 0.20f
         val eyeY = vcy - vh * 0.08f
 
         val leftEyeCx  = vcx - vw * 0.15f
         val rightEyeCx = vcx + vw * 0.22f
 
-drawEye(canvas, leftEyeCx,  eyeY, eyeW, eyeH)
-drawEye(canvas, rightEyeCx, eyeY, eyeW, eyeH)
+        drawEye(canvas, leftEyeCx,  eyeY, eyeW, eyeH)
+        drawEye(canvas, rightEyeCx, eyeY, eyeW, eyeH)
 
-// Mouth upar + thoda right
-drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
+        drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
     }
 
     // ──────────────────────────────────────────────────────────
-    // EYE — white eyeball + black pupil
+    // EYE
     // ──────────────────────────────────────────────────────────
     private fun drawEye(canvas: Canvas, cx: Float, cy: Float, ew: Float, eh: Float) {
         val scaleY = when (expression) {
@@ -150,7 +208,7 @@ drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
         // White eyeball
         canvas.drawOval(RectF(cx - ew, cy - eh, cx + ew, cy + eh), eyeballPaint)
 
-        // Black pupil
+        // Pupil
         val pupilW  = ew * 0.42f
         val pupilH  = eh * 0.42f
         val maxOffX = ew * 0.35f
@@ -163,7 +221,7 @@ drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
             pupilPaint
         )
 
-        // White glint
+        // Glint
         canvas.drawCircle(
             cx + px - pupilW * 0.25f,
             cy + py - pupilH * 0.25f,
@@ -174,12 +232,14 @@ drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
     }
 
     // ──────────────────────────────────────────────────────────
-    // PUPIL OFFSET
+    // PUPIL OFFSET — priority: touch > roam > random > center
     // ──────────────────────────────────────────────────────────
     private fun getPupilOffset(
         eyeCx: Float, eyeCy: Float,
         maxX: Float,  maxY: Float
     ): Pair<Float, Float> {
+
+        // 1. Touch tracking
         if (touchEyeEnabled && touchScreenX >= 0f) {
             val loc = IntArray(2)
             getLocationOnScreen(loc)
@@ -189,9 +249,17 @@ drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
             val move = min(dist * 0.35f, maxX)
             return Pair((dx / dist) * move, (dy / dist) * min(dist * 0.35f, maxY))
         }
+
+        // 2. Roaming direction
+        if (isRoaming || smoothRoamX != 0f || smoothRoamY != 0f) {
+            return Pair(smoothRoamX * maxX, smoothRoamY * maxY)
+        }
+
+        // 3. Random idle
         if (randomEyeEnabled) {
             return Pair(idlePupilX * maxX, idlePupilY * maxY)
         }
+
         return Pair(0f, 0f)
     }
 
@@ -352,6 +420,7 @@ drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
         blinkAnimator?.cancel()
         mouthAnimator?.cancel()
         idleAnimator?.cancel()
+        roamSmoothAnimator?.cancel()
         blinkRunnable?.let { blinkScheduler?.removeCallbacks(it) }
         blinkScheduler = null
     }
