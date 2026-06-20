@@ -37,6 +37,11 @@ class FloatingBotService : Service() {
         const val KEY_RANDOM_EYE = "random_eye_enabled"
         const val KEY_TOUCH_EYE  = "touch_eye_enabled"
         const val KEY_ROAMING    = "roaming_enabled"
+
+        // Mood timing thresholds (ms)
+        const val SLEEPY_THRESHOLD_MS = 60_000L      // 1 min
+        const val ANGRY_THRESHOLD_MS  = 600_000L     // 10 min
+        const val DIZZY_DRAG_THRESHOLD_MS = 30_000L  // 30 sec continuous drag
     }
 
     private lateinit var windowManager: WindowManager
@@ -51,6 +56,14 @@ class FloatingBotService : Service() {
     private lateinit var inputParams: WindowManager.LayoutParams
     private var inputAttached = false
 
+    private lateinit var bubbleView: BotBubbleView
+    private lateinit var bubbleParams: WindowManager.LayoutParams
+    private var bubbleAttached = false
+
+    private lateinit var listeningView: ListeningOverlayView
+    private lateinit var listeningParams: WindowManager.LayoutParams
+    private var listeningAttached = false
+
     private var speechRecognizer: SpeechRecognizer? = null
     private var botHidden = false
 
@@ -58,16 +71,20 @@ class FloatingBotService : Service() {
     private var screenHeight = 0
     private var botSizePx    = 0
 
+    // Drag state
     private var initialX      = 0
     private var initialY      = 0
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var isDragging    = false
     private var touchDownTime = 0L
+    private var dragStartTime = 0L
 
+    // Bobbing
     private var bobbingAnimator: ValueAnimator? = null
     private var bobbingBaseY = 0
 
+    // Roaming
     private var roamingEnabled = false
     private var roamAnimX: ValueAnimator? = null
     private var roamAnimY: ValueAnimator? = null
@@ -77,6 +94,14 @@ class FloatingBotService : Service() {
     private var currentRoamY = 0f
     private var targetRoamX  = 0f
     private var targetRoamY  = 0f
+
+    // ── Mood tracking ──
+    private var currentMood = BotMood.SMILE
+    private var lastInteractionTime = System.currentTimeMillis()
+    private val moodHandler = Handler(Looper.getMainLooper())
+    private var moodCheckRunnable: Runnable? = null
+    private var dizzyCheckRunnable: Runnable? = null
+    private var isDizzyTriggered = false
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -114,6 +139,7 @@ class FloatingBotService : Service() {
         botView = FloatingBotView(this)
         botView.setOnTouchListener(botTouchListener)
 
+        // ── Menu view ──
         menuView = FloatingMenuView(this)
         menuParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -123,10 +149,10 @@ class FloatingBotService : Service() {
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply { gravity = Gravity.TOP or Gravity.START }
-
         menuView.onActionSelected = { action -> handleMenuAction(action) }
         menuView.onDismiss = { detachMenu() }
 
+        // ── Input view ──
         inputView = FloatingInputView(this)
         inputParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -139,8 +165,34 @@ class FloatingBotService : Service() {
             gravity = Gravity.TOP or Gravity.START
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
-        inputView.onSubmit = { text -> CommandExecutor.execute(this, text) }
+        inputView.onSubmit = { text ->
+            registerInteraction()
+            showRecognizedTextThenExecute(text)
+        }
         inputView.onDismiss = { detachInput() }
+
+        // ── Bubble view (message bubble) ──
+        bubbleView = BotBubbleView(this)
+        bubbleParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            overlayType(),
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply { gravity = Gravity.TOP or Gravity.START }
+
+        // ── Listening overlay (STT UI) ──
+        listeningView = ListeningOverlayView(this)
+        listeningParams = WindowManager.LayoutParams(
+            botSizePx, botSizePx,
+            overlayType(),
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply { gravity = Gravity.TOP or Gravity.START }
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         botView.randomEyeEnabled = prefs.getBoolean(KEY_RANDOM_EYE, false)
@@ -161,6 +213,8 @@ class FloatingBotService : Service() {
         JunAccessibilityService.onTouchClear = {
             botView.clearTouchPosition()
         }
+
+        startMoodTracking()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -184,10 +238,15 @@ class FloatingBotService : Service() {
         stopRoaming()
         bobbingAnimator?.cancel()
         botView.destroy()
+        bubbleView.destroy()
+        listeningView.destroy()
         if (botView.isAttachedToWindow) windowManager.removeView(botView)
         detachMenu()
         detachInput()
+        detachBubble()
+        detachListening()
         speechRecognizer?.destroy()
+        stopMoodTracking()
         JunAccessibilityService.onTouch      = null
         JunAccessibilityService.onTouchClear = null
     }
@@ -195,11 +254,64 @@ class FloatingBotService : Service() {
     override fun onBind(intent: Intent?) = null
 
     // ──────────────────────────────────────────────────────────
+    // MOOD TRACKING
+    // ──────────────────────────────────────────────────────────
+    private fun registerInteraction() {
+        lastInteractionTime = System.currentTimeMillis()
+        if (currentMood != BotMood.DIZZY) {
+            applyMood(BotMood.SMILE)
+        }
+    }
+
+    private fun startMoodTracking() {
+        moodCheckRunnable = object : Runnable {
+            override fun run() {
+                checkMoodByIdleTime()
+                moodHandler.postDelayed(this, 10_000L) // check every 10 sec
+            }
+        }
+        moodHandler.postDelayed(moodCheckRunnable!!, 10_000L)
+    }
+
+    private fun stopMoodTracking() {
+        moodCheckRunnable?.let { moodHandler.removeCallbacks(it) }
+        dizzyCheckRunnable?.let { moodHandler.removeCallbacks(it) }
+    }
+
+    private fun checkMoodByIdleTime() {
+        if (currentMood == BotMood.DIZZY) return // dizzy handled separately by drag
+        val idleTime = System.currentTimeMillis() - lastInteractionTime
+
+        val newMood = when {
+            idleTime >= ANGRY_THRESHOLD_MS  -> BotMood.ANGRY
+            idleTime >= SLEEPY_THRESHOLD_MS -> BotMood.SLEEPY
+            else -> BotMood.SMILE
+        }
+
+        if (newMood != currentMood) {
+            applyMood(newMood)
+        }
+    }
+
+    private fun applyMood(newMood: BotMood) {
+        currentMood = newMood
+        botView.setMood(newMood)
+        showMoodBubble(newMood)
+    }
+
+    private fun showMoodBubble(forMood: BotMood) {
+        val options = BotMoodMessages.messages[forMood] ?: return
+        val text = options.random()
+        showBubble(text, 2800)
+    }
+
+    // ──────────────────────────────────────────────────────────
     // BOT TOUCH
     // ──────────────────────────────────────────────────────────
     private val botTouchListener = View.OnTouchListener { _, event ->
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                registerInteraction()
                 if (roamingEnabled) pauseRoaming() else stopBobbing()
                 initialX      = botParams.x
                 initialY      = botParams.y
@@ -207,6 +319,8 @@ class FloatingBotService : Service() {
                 initialTouchY = event.rawY
                 isDragging    = false
                 touchDownTime = System.currentTimeMillis()
+                dragStartTime = 0L
+                isDizzyTriggered = false
                 true
             }
 
@@ -216,6 +330,8 @@ class FloatingBotService : Service() {
 
                 if (!isDragging && (abs(dx) > TAP_MAX_MOVE || abs(dy) > TAP_MAX_MOVE)) {
                     isDragging = true
+                    dragStartTime = System.currentTimeMillis()
+                    scheduleDizzyCheck()
                 }
 
                 if (isDragging) {
@@ -223,6 +339,7 @@ class FloatingBotService : Service() {
                     botParams.y = (initialY + dy).toInt()
                     windowManager.updateViewLayout(botView, botParams)
                     botView.setRoamDirection(dx, dy)
+                    updateAttachedOverlaysPosition()
                 }
                 true
             }
@@ -233,7 +350,15 @@ class FloatingBotService : Service() {
                 val wasTap  = !isDragging && elapsed < TAP_MAX_MS
 
                 isDragging = false
+                dragStartTime = 0L
+                dizzyCheckRunnable?.let { moodHandler.removeCallbacks(it) }
                 botView.clearRoamDirection()
+
+                // Exit dizzy mood once drag ends
+                if (isDizzyTriggered) {
+                    isDizzyTriggered = false
+                    applyMood(BotMood.SMILE)
+                }
 
                 if (wasTap) {
                     if (roamingEnabled) {
@@ -259,17 +384,27 @@ class FloatingBotService : Service() {
         }
     }
 
+    private fun scheduleDizzyCheck() {
+        dizzyCheckRunnable = Runnable {
+            if (isDragging) {
+                isDizzyTriggered = true
+                applyMood(BotMood.DIZZY)
+            }
+        }
+        moodHandler.postDelayed(dizzyCheckRunnable!!, DIZZY_DRAG_THRESHOLD_MS)
+    }
+
     // ──────────────────────────────────────────────────────────
     // MENU
     // ──────────────────────────────────────────────────────────
     private fun openMenu() {
+        registerInteraction()
         if (!menuAttached) {
             try {
                 windowManager.addView(menuView, menuParams)
                 menuAttached = true
             } catch (e: Exception) { return }
         }
-        // Position menu beside bot before showing
         menuView.post {
             menuView.positionRelativeToBot(botParams.x, botParams.y, botSizePx, screenWidth)
             menuView.showMenu()
@@ -287,6 +422,7 @@ class FloatingBotService : Service() {
     }
 
     private fun handleMenuAction(action: FloatingMenuView.MenuAction) {
+        registerInteraction()
         when (action) {
             FloatingMenuView.MenuAction.HIDE -> {
                 detachMenu()
@@ -334,9 +470,95 @@ class FloatingBotService : Service() {
     }
 
     // ──────────────────────────────────────────────────────────
-    // BACKGROUND STT
+    // MESSAGE BUBBLE
+    // ──────────────────────────────────────────────────────────
+    private fun showBubble(text: String, durationMs: Long = 2800) {
+        if (botHidden || !botView.isAttachedToWindow) return
+
+        if (!bubbleAttached) {
+            try {
+                windowManager.addView(bubbleView, bubbleParams)
+                bubbleAttached = true
+            } catch (e: Exception) { return }
+        }
+
+        bubbleView.post {
+            positionBubble()
+            bubbleView.showMessage(text, durationMs)
+        }
+    }
+
+    private fun positionBubble() {
+        val botCenterX = botParams.x + botSizePx / 2
+        val pointsRight = botCenterX < screenWidth / 2
+        bubbleView.pointsRight = pointsRight
+
+        // Measure bubble first
+        bubbleView.measure(
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        val bubbleW = bubbleView.measuredWidth.coerceAtLeast(80)
+        val bubbleH = bubbleView.measuredHeight.coerceAtLeast(70)
+
+        val gap = (8 * resources.displayMetrics.density).toInt()
+        val bubbleX = if (pointsRight) botParams.x + botSizePx + gap else botParams.x - gap - bubbleW
+        val bubbleY = (botParams.y + botSizePx / 2 - bubbleH / 2).coerceAtLeast(20)
+
+        bubbleParams.x = bubbleX
+        bubbleParams.y = bubbleY
+        try { windowManager.updateViewLayout(bubbleView, bubbleParams) } catch (e: Exception) { }
+    }
+
+    private fun detachBubble() {
+        if (bubbleAttached) {
+            try { windowManager.removeView(bubbleView) } catch (e: Exception) { }
+            bubbleAttached = false
+        }
+    }
+
+    private fun updateAttachedOverlaysPosition() {
+        if (bubbleAttached) positionBubble()
+        if (listeningAttached) {
+            listeningParams.x = botParams.x
+            listeningParams.y = botParams.y
+            try { windowManager.updateViewLayout(listeningView, listeningParams) } catch (e: Exception) { }
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // LISTENING OVERLAY
+    // ──────────────────────────────────────────────────────────
+    private fun showListeningUI() {
+        if (!listeningAttached) {
+            try {
+                listeningParams.x = botParams.x
+                listeningParams.y = botParams.y
+                windowManager.addView(listeningView, listeningParams)
+                listeningAttached = true
+            } catch (e: Exception) { return }
+        }
+        listeningView.start()
+    }
+
+    private fun detachListening() {
+        if (listeningAttached) {
+            listeningView.stop()
+            mainHandler.postDelayed({
+                if (listeningAttached) {
+                    try { windowManager.removeView(listeningView) } catch (e: Exception) { }
+                    listeningAttached = false
+                }
+            }, 200)
+        }
+    }
+
+    // ───────────────────────────────────────────
+     // BACKGROUND STT
     // ──────────────────────────────────────────────────────────
     private fun startBackgroundSTT() {
+        registerInteraction()
+
         if (androidx.core.content.ContextCompat.checkSelfPermission(
                 this, android.Manifest.permission.RECORD_AUDIO
             ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -348,11 +570,12 @@ class FloatingBotService : Service() {
         }
 
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            Toast.makeText(this, "Speech recognition available nahi hai", Toast.LENGTH_SHORT).show()
+            showBubble("Voice support nahi mila 😅", 2000)
             return
         }
 
         botView.expression = BotExpression.LISTENING
+        showListeningUI()
 
         speechRecognizer?.destroy()
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
@@ -367,15 +590,19 @@ class FloatingBotService : Service() {
                 override fun onError(error: Int) {
                     mainHandler.post {
                         botView.expression = BotExpression.NEURAL
-                        Toast.makeText(this@FloatingBotService, "Sun nahi paayi 😅", Toast.LENGTH_SHORT).show()
+                        detachListening()
+                        showBubble("Sun nahi paayi 😅", 2000)
                     }
                 }
                 override fun onResults(results: Bundle?) {
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    mainHandler.post { botView.expression = BotExpression.NEURAL }
-                    val spoken = matches?.firstOrNull()
-                    if (!spoken.isNullOrEmpty()) {
-                        CommandExecutor.execute(this@FloatingBotService, spoken)
+                    mainHandler.post {
+                        botView.expression = BotExpression.NEURAL
+                        detachListening()
+                        val spoken = matches?.firstOrNull()
+                        if (!spoken.isNullOrEmpty()) {
+                            showRecognizedTextThenExecute(spoken)
+                        }
                     }
                 }
                 override fun onPartialResults(partialResults: Bundle?) {}
@@ -391,8 +618,16 @@ class FloatingBotService : Service() {
         }
     }
 
+    // Show recognized text in bubble for 1.2s, then execute the command
+    private fun showRecognizedTextThenExecute(text: String) {
+        showBubble("\"$text\"", 1200)
+        mainHandler.postDelayed({
+            CommandExecutor.execute(this, text)
+        }, 1200)
+    }
+
     // ──────────────────────────────────────────────────────────
-    // ROAMING
+    // ROAMING — more natural, covers more area including corners
     // ──────────────────────────────────────────────────────────
     private fun startRoaming() {
         stopBobbing()
@@ -418,7 +653,9 @@ class FloatingBotService : Service() {
     private fun roamToNextTarget() {
         if (!roamingEnabled || isDragging || menuAttached || inputAttached) return
 
-        val margin = botSizePx * 0.3f
+        // Smaller margin so bot reaches corners too; occasionally allow full corner visits
+        val margin = if (Random.nextFloat() < 0.3f) botSizePx * 0.05f else botSizePx * 0.15f
+
         targetRoamX = Random.nextFloat() * (screenWidth  - botSizePx - margin * 2) + margin
         targetRoamY = Random.nextFloat() * (screenHeight - botSizePx - margin * 2) + margin
 
@@ -427,7 +664,7 @@ class FloatingBotService : Service() {
         val distance = sqrt(dx * dx + dy * dy)
 
         val speed    = 280f * resources.displayMetrics.density
-        val duration = ((distance / speed) * 1000f).toLong().coerceIn(1200, 3500)
+        val duration = ((distance / speed) * 1000f).toLong().coerceIn(1000, 4200)
 
         botView.setRoamDirection(dx, dy)
 
@@ -442,6 +679,7 @@ class FloatingBotService : Service() {
                     currentRoamX = it.animatedValue as Float
                     botParams.x  = currentRoamX.toInt()
                     try { windowManager.updateViewLayout(botView, botParams) } catch (e: Exception) { }
+                    updateAttachedOverlaysPosition()
                 }
             }
             start()
@@ -449,19 +687,21 @@ class FloatingBotService : Service() {
 
         roamAnimY = ValueAnimator.ofFloat(fromY, targetRoamY).apply {
             this.duration = duration
-            startDelay    = 80
+            startDelay    = 60
             interpolator  = AccelerateDecelerateInterpolator()
             addUpdateListener {
                 if (!isDragging && !menuAttached && !inputAttached) {
                     currentRoamY = it.animatedValue as Float
                     botParams.y  = currentRoamY.toInt()
                     try { windowManager.updateViewLayout(botView, botParams) } catch (e: Exception) { }
+                    updateAttachedOverlaysPosition()
                 }
             }
             doOnEnd {
                 if (!isDragging && !menuAttached && !inputAttached) {
                     botView.clearRoamDirection()
-                    val pause = Random.nextLong(800, 2500)
+                    // Shorter, more frequent pauses for natural feel
+                    val pause = Random.nextLong(500, 2000)
                     roamRunnable = Runnable { roamToNextTarget() }
                     roamHandler.postDelayed(roamRunnable!!, pause)
                 }
@@ -485,6 +725,7 @@ class FloatingBotService : Service() {
             addUpdateListener {
                 botParams.x = it.animatedValue as Int
                 windowManager.updateViewLayout(botView, botParams)
+                updateAttachedOverlaysPosition()
             }
             doOnEnd {
                 bobbingBaseY = botParams.y
@@ -509,6 +750,7 @@ class FloatingBotService : Service() {
                 if (!isDragging && !roamingEnabled && !menuAttached && !inputAttached) {
                     botParams.y = bobbingBaseY + (it.animatedValue as Float).toInt()
                     windowManager.updateViewLayout(botView, botParams)
+                    updateAttachedOverlaysPosition()
                 }
             }
             start()
@@ -543,6 +785,8 @@ class FloatingBotService : Service() {
             stopBobbing()
             detachMenu()
             detachInput()
+            detachBubble()
+            detachListening()
             if (botView.isAttachedToWindow) windowManager.removeView(botView)
         }
     }
@@ -567,7 +811,7 @@ class FloatingBotService : Service() {
     }
 
     // ──────────────────────────────────────────────────────────
-    // NOTIFICATION — dynamic Hide/Show button
+    // NOTIFICATION
     // ──────────────────────────────────────────────────────────
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
