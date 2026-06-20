@@ -19,6 +19,8 @@ class FloatingBotService : Service() {
         const val NOTIF_ID       = 42
         const val BOT_SIZE_DP    = 210
         const val SNAP_ANIM_MS   = 320L
+        const val TAP_MAX_MS     = 200L
+        const val TAP_MAX_MOVE   = 12f
 
         const val ACTION_SHOW        = "ACTION_SHOW"
         const val ACTION_HIDE        = "ACTION_HIDE"
@@ -37,6 +39,10 @@ class FloatingBotService : Service() {
     private lateinit var botView: FloatingBotView
     private lateinit var botParams: WindowManager.LayoutParams
 
+    private lateinit var menuView: FloatingMenuView
+    private lateinit var menuParams: WindowManager.LayoutParams
+    private var menuAttached = false
+
     private var screenWidth  = 0
     private var screenHeight = 0
     private var botSizePx    = 0
@@ -47,21 +53,22 @@ class FloatingBotService : Service() {
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var isDragging    = false
+    private var touchDownTime = 0L
 
     // Bobbing
     private var bobbingAnimator: ValueAnimator? = null
     private var bobbingBaseY = 0
 
     // Roaming
-    private var roamingEnabled   = false
-    private var roamAnimX:   ValueAnimator? = null
-    private var roamAnimY:   ValueAnimator? = null
-    private var roamHandler      = Handler(Looper.getMainLooper())
+    private var roamingEnabled = false
+    private var roamAnimX: ValueAnimator? = null
+    private var roamAnimY: ValueAnimator? = null
+    private var roamHandler = Handler(Looper.getMainLooper())
     private var roamRunnable: Runnable? = null
-    private var currentRoamX    = 0f
-    private var currentRoamY    = 0f
-    private var targetRoamX     = 0f
-    private var targetRoamY     = 0f
+    private var currentRoamX = 0f
+    private var currentRoamY = 0f
+    private var targetRoamX  = 0f
+    private var targetRoamY  = 0f
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -97,6 +104,20 @@ class FloatingBotService : Service() {
 
         botView = FloatingBotView(this)
         botView.setOnTouchListener(botTouchListener)
+
+        // ── Menu view — full screen, transparent, focusable when shown ──
+        menuView = FloatingMenuView(this)
+        menuParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            overlayType(),
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply { gravity = Gravity.TOP or Gravity.START }
+
+        menuView.onActionSelected = { action -> handleMenuAction(action) }
+        menuView.onDismiss = { detachMenu() }
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         botView.randomEyeEnabled = prefs.getBoolean(KEY_RANDOM_EYE, false)
@@ -141,6 +162,7 @@ class FloatingBotService : Service() {
         bobbingAnimator?.cancel()
         botView.destroy()
         if (botView.isAttachedToWindow) windowManager.removeView(botView)
+        detachMenu()
         JunAccessibilityService.onTouch      = null
         JunAccessibilityService.onTouchClear = null
     }
@@ -148,20 +170,19 @@ class FloatingBotService : Service() {
     override fun onBind(intent: Intent?) = null
 
     // ──────────────────────────────────────────────────────────
-    // BOT TOUCH
+    // BOT TOUCH — drag + tap-to-open-menu
     // ──────────────────────────────────────────────────────────
     private val botTouchListener = View.OnTouchListener { _, event ->
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                // Pause roaming + bobbing on drag
-                if (roamingEnabled) pauseRoaming()
-                else stopBobbing()
+                if (roamingEnabled) pauseRoaming() else stopBobbing()
 
                 initialX      = botParams.x
                 initialY      = botParams.y
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
                 isDragging    = false
+                touchDownTime = System.currentTimeMillis()
                 true
             }
 
@@ -169,15 +190,14 @@ class FloatingBotService : Service() {
                 val dx = event.rawX - initialTouchX
                 val dy = event.rawY - initialTouchY
 
-                if (!isDragging &&
-                    (abs(dx) > 8f || abs(dy) > 8f)) isDragging = true
+                if (!isDragging && (abs(dx) > TAP_MAX_MOVE || abs(dy) > TAP_MAX_MOVE)) {
+                    isDragging = true
+                }
 
                 if (isDragging) {
                     botParams.x = (initialX + dx).toInt()
                     botParams.y = (initialY + dy).toInt()
                     windowManager.updateViewLayout(botView, botParams)
-
-                    // Eyes follow drag direction
                     botView.setRoamDirection(dx, dy)
                 }
                 true
@@ -185,21 +205,92 @@ class FloatingBotService : Service() {
 
             MotionEvent.ACTION_UP,
             MotionEvent.ACTION_CANCEL -> {
+                val elapsed = System.currentTimeMillis() - touchDownTime
+                val wasTap  = !isDragging && elapsed < TAP_MAX_MS
+
                 isDragging = false
                 botView.clearRoamDirection()
 
-                if (roamingEnabled) {
-                    // Update current pos and resume roaming
-                    currentRoamX = botParams.x.toFloat()
-                    currentRoamY = botParams.y.toFloat()
-                    resumeRoaming()
+                if (wasTap) {
+                    // Tap detected — open menu
+                    if (roamingEnabled) {
+                        currentRoamX = botParams.x.toFloat()
+                        currentRoamY = botParams.y.toFloat()
+                    } else {
+                        stopBobbing()
+                    }
+                    openMenu()
                 } else {
-                    snapToEdge()
+                    if (roamingEnabled) {
+                        currentRoamX = botParams.x.toFloat()
+                        currentRoamY = botParams.y.toFloat()
+                        resumeRoaming()
+                    } else {
+                        snapToEdge()
+                    }
                 }
                 true
             }
 
             else -> false
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // MENU
+    // ──────────────────────────────────────────────────────────
+    private fun openMenu() {
+        if (!menuAttached) {
+            try {
+                windowManager.addView(menuView, menuParams)
+                menuAttached = true
+            } catch (e: Exception) { return }
+        }
+        menuView.showMenu()
+    }
+
+    private fun detachMenu() {
+        if (menuAttached) {
+            try { windowManager.removeView(menuView) } catch (e: Exception) { }
+            menuAttached = false
+        }
+        // Resume idle behavior
+        if (roamingEnabled) resumeRoaming() else startBobbing()
+    }
+
+    private fun handleMenuAction(action: FloatingMenuView.MenuAction) {
+        when (action) {
+            FloatingMenuView.MenuAction.HIDE -> {
+                detachMenu()
+                hideBot()
+            }
+            FloatingMenuView.MenuAction.OPEN_APP -> {
+                val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                launchIntent?.let { startActivity(it) }
+                detachMenu()
+            }
+            FloatingMenuView.MenuAction.MESSAGE -> {
+                // Opens main app with a flag to focus message input
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    putExtra("focus_input", true)
+                }
+                startActivity(intent)
+                detachMenu()
+            }
+            FloatingMenuView.MenuAction.SPEAK -> {
+                // Opens main app with a flag to trigger voice input
+                val intent = Intent(this, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    putExtra("trigger_voice", true)
+                }
+                startActivity(intent)
+                detachMenu()
+            }
+            FloatingMenuView.MenuAction.BACK -> {
+                detachMenu()
+            }
         }
     }
 
@@ -228,9 +319,8 @@ class FloatingBotService : Service() {
     }
 
     private fun roamToNextTarget() {
-        if (!roamingEnabled || isDragging) return
+        if (!roamingEnabled || isDragging || menuAttached) return
 
-        // Pick random target — safe margins from edges
         val margin = botSizePx * 0.3f
         targetRoamX = Random.nextFloat() * (screenWidth  - botSizePx - margin * 2) + margin
         targetRoamY = Random.nextFloat() * (screenHeight - botSizePx - margin * 2) + margin
@@ -239,49 +329,41 @@ class FloatingBotService : Service() {
         val dy       = targetRoamY - currentRoamY
         val distance = sqrt(dx * dx + dy * dy)
 
-        // Speed: ~280dp/sec — medium feel
         val speed    = 280f * resources.displayMetrics.density
         val duration = ((distance / speed) * 1000f).toLong().coerceIn(1200, 3500)
 
-        // Tell eyes where we're heading
         botView.setRoamDirection(dx, dy)
 
         val fromX = currentRoamX
         val fromY = currentRoamY
 
-        // Animate X
         roamAnimX = ValueAnimator.ofFloat(fromX, targetRoamX).apply {
-            this.duration    = duration
-            interpolator     = AccelerateDecelerateInterpolator()
+            this.duration = duration
+            interpolator  = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                if (!isDragging) {
+                if (!isDragging && !menuAttached) {
                     currentRoamX = it.animatedValue as Float
                     botParams.x  = currentRoamX.toInt()
-                    try { windowManager.updateViewLayout(botView, botParams) }
-                    catch (e: Exception) { }
+                    try { windowManager.updateViewLayout(botView, botParams) } catch (e: Exception) { }
                 }
             }
             start()
         }
 
-        // Animate Y — slight delay for natural curve feel
         roamAnimY = ValueAnimator.ofFloat(fromY, targetRoamY).apply {
-            this.duration    = duration
-            startDelay       = 80
-            interpolator     = AccelerateDecelerateInterpolator()
+            this.duration = duration
+            startDelay    = 80
+            interpolator  = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                if (!isDragging) {
+                if (!isDragging && !menuAttached) {
                     currentRoamY = it.animatedValue as Float
-                    // Bobbing offset on top of roam
                     botParams.y  = currentRoamY.toInt()
-                    try { windowManager.updateViewLayout(botView, botParams) }
-                    catch (e: Exception) { }
+                    try { windowManager.updateViewLayout(botView, botParams) } catch (e: Exception) { }
                 }
             }
             doOnEnd {
-                if (!isDragging) {
+                if (!isDragging && !menuAttached) {
                     botView.clearRoamDirection()
-                    // Random pause before next move — 800ms to 2500ms
                     val pause = Random.nextLong(800, 2500)
                     roamRunnable = Runnable { roamToNextTarget() }
                     roamHandler.postDelayed(roamRunnable!!, pause)
@@ -292,7 +374,7 @@ class FloatingBotService : Service() {
     }
 
     // ──────────────────────────────────────────────────────────
-    // EDGE SNAP (non-roaming mode)
+    // EDGE SNAP
     // ──────────────────────────────────────────────────────────
     private fun snapToEdge() {
         val midX    = botParams.x + botSizePx / 2
@@ -319,6 +401,7 @@ class FloatingBotService : Service() {
     // BOBBING
     // ──────────────────────────────────────────────────────────
     private fun startBobbing() {
+        if (menuAttached) return
         bobbingAnimator?.cancel()
         bobbingAnimator = ValueAnimator.ofFloat(-12f, 12f).apply {
             duration     = 1800
@@ -326,7 +409,7 @@ class FloatingBotService : Service() {
             repeatMode   = ValueAnimator.REVERSE
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                if (!isDragging && !roamingEnabled) {
+                if (!isDragging && !roamingEnabled && !menuAttached) {
                     botParams.y = bobbingBaseY + (it.animatedValue as Float).toInt()
                     windowManager.updateViewLayout(botView, botParams)
                 }
@@ -357,6 +440,7 @@ class FloatingBotService : Service() {
         mainHandler.post {
             stopRoaming()
             stopBobbing()
+            detachMenu()
             if (botView.isAttachedToWindow) windowManager.removeView(botView)
         }
     }
