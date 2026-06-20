@@ -52,12 +52,12 @@ class FloatingBotService : Service() {
     private var inputAttached = false
 
     private var speechRecognizer: SpeechRecognizer? = null
+    private var botHidden = false
 
     private var screenWidth  = 0
     private var screenHeight = 0
     private var botSizePx    = 0
 
-    // Drag state
     private var initialX      = 0
     private var initialY      = 0
     private var initialTouchX = 0f
@@ -65,11 +65,9 @@ class FloatingBotService : Service() {
     private var isDragging    = false
     private var touchDownTime = 0L
 
-    // Bobbing
     private var bobbingAnimator: ValueAnimator? = null
     private var bobbingBaseY = 0
 
-    // Roaming
     private var roamingEnabled = false
     private var roamAnimX: ValueAnimator? = null
     private var roamAnimY: ValueAnimator? = null
@@ -116,7 +114,6 @@ class FloatingBotService : Service() {
         botView = FloatingBotView(this)
         botView.setOnTouchListener(botTouchListener)
 
-        // ── Menu view ──
         menuView = FloatingMenuView(this)
         menuParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -130,7 +127,6 @@ class FloatingBotService : Service() {
         menuView.onActionSelected = { action -> handleMenuAction(action) }
         menuView.onDismiss = { detachMenu() }
 
-        // ── Input view ──
         inputView = FloatingInputView(this)
         inputParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -143,9 +139,7 @@ class FloatingBotService : Service() {
             gravity = Gravity.TOP or Gravity.START
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
-        inputView.onSubmit = { text ->
-            CommandExecutor.execute(this, text)
-        }
+        inputView.onSubmit = { text -> CommandExecutor.execute(this, text) }
         inputView.onDismiss = { detachInput() }
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
@@ -275,7 +269,11 @@ class FloatingBotService : Service() {
                 menuAttached = true
             } catch (e: Exception) { return }
         }
-        menuView.showMenu()
+        // Position menu beside bot before showing
+        menuView.post {
+            menuView.positionRelativeToBot(botParams.x, botParams.y, botSizePx, screenWidth)
+            menuView.showMenu()
+        }
     }
 
     private fun detachMenu() {
@@ -528,6 +526,8 @@ class FloatingBotService : Service() {
     // ──────────────────────────────────────────────────────────
     private fun showBot() {
         mainHandler.post {
+            botHidden = false
+            updateNotification()
             if (!botView.isAttachedToWindow) {
                 windowManager.addView(botView, botParams)
                 if (roamingEnabled) startRoaming() else startBobbing()
@@ -537,6 +537,8 @@ class FloatingBotService : Service() {
 
     private fun hideBot() {
         mainHandler.post {
+            botHidden = true
+            updateNotification()
             stopRoaming()
             stopBobbing()
             detachMenu()
@@ -565,7 +567,7 @@ class FloatingBotService : Service() {
     }
 
     // ──────────────────────────────────────────────────────────
-    // NOTIFICATION
+    // NOTIFICATION — dynamic Hide/Show button
     // ──────────────────────────────────────────────────────────
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -578,17 +580,25 @@ class FloatingBotService : Service() {
         }
     }
 
+    private fun updateNotification() {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.notify(NOTIF_ID, buildNotification())
+    }
+
     private fun buildNotification(): Notification {
-        val stopIntent = PendingIntent.getService(
+        val actionLabel = if (botHidden) "Show" else "Hide"
+        val actionToSend = if (botHidden) ACTION_SHOW else ACTION_HIDE
+
+        val actionIntent = PendingIntent.getService(
             this, 0,
-            Intent(this, FloatingBotService::class.java).apply { action = ACTION_HIDE },
-            PendingIntent.FLAG_IMMUTABLE
+            Intent(this, FloatingBotService::class.java).apply { action = actionToSend },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Jun is active")
-            .setContentText("Tap to hide")
+            .setContentText(if (botHidden) "Jun hidden — tap to show" else "Tap to hide")
             .setSmallIcon(R.drawable.ic_mic)
-            .addAction(0, "Hide", stopIntent)
+            .addAction(0, actionLabel, actionIntent)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
     }
