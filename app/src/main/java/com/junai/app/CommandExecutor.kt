@@ -19,6 +19,7 @@ object CommandExecutor {
 
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     private val packageMap = mapOf(
         "youtube" to "com.google.android.youtube",
@@ -172,16 +173,20 @@ object CommandExecutor {
             }
 
             else -> {
-                // UNKNOWN — knowledge search background mein
-                CoroutineScope(Dispatchers.IO).launch {
-                    val repo = LearningRepository(context)
-                    val searchResult = repo.findAnswer(text)
-                    val response = when {
-                        searchResult.answer != null && searchResult.confidence >= 70f -> searchResult.answer
-                        else -> "Samajh nahi paayi 😅 App mein try karo!"
-                    }
-                    respond(context, response)
-                }
+    // UNKNOWN — knowledge search background mein
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val repo = LearningRepository(context)
+            val searchResult = repo.findAnswer(text)
+            val response = when {
+                searchResult.answer != null && searchResult.confidence >= 70f -> searchResult.answer
+                else -> "Samajh nahi paayi 😅 App mein try karo!"
+            }
+            mainHandler.post { respond(context, response) }
+        } catch (e: Exception) {
+            mainHandler.post { respond(context, "Kuch gadbad ho gayi 😅") }
+        }
+    }
             }
         }
     }
