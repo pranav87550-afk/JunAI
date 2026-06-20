@@ -13,8 +13,7 @@ class FloatingBotView(context: Context) : View(context) {
     var expression: BotExpression = BotExpression.NEURAL
         set(value) { field = value; invalidate() }
 
-    var mood: BotMood = BotMood.SMILE
-        set(value) { field = value; invalidate() }
+    private var currentMood: BotMood = BotMood.SMILE
 
     // ─── Visor ────────────────────────────────────────────────
     private val visorLeftF   = 0.20f
@@ -102,10 +101,12 @@ class FloatingBotView(context: Context) : View(context) {
     // MOOD
     // ──────────────────────────────────────────────────────────
     fun setMood(newMood: BotMood) {
-        mood = newMood
+        currentMood = newMood
         if (newMood == BotMood.DIZZY) startDizzySpin() else stopDizzySpin()
         invalidate()
     }
+
+    fun getMood(): BotMood = currentMood
 
     private fun startDizzySpin() {
         dizzyAnimator?.cancel()
@@ -219,7 +220,7 @@ class FloatingBotView(context: Context) : View(context) {
         val rightEyeCx = vcx + vw * 0.22f
 
         // Dizzy spin applies to whole face
-        if (mood == BotMood.DIZZY) {
+        if (currentMood == BotMood.DIZZY) {
             canvas.save()
             canvas.rotate(dizzySpinAngle, vcx, vcy)
         }
@@ -228,14 +229,14 @@ class FloatingBotView(context: Context) : View(context) {
         drawEye(canvas, rightEyeCx, eyeY, eyeW, eyeH)
 
         // Angry eyebrows
-        if (mood == BotMood.ANGRY) {
+        if (currentMood == BotMood.ANGRY) {
             canvas.drawLine(leftEyeCx - eyeW, eyeY - eyeH * 1.4f, leftEyeCx + eyeW * 0.5f, eyeY - eyeH * 1.8f, angryBrowPaint)
             canvas.drawLine(rightEyeCx - eyeW * 0.5f, eyeY - eyeH * 1.8f, rightEyeCx + eyeW, eyeY - eyeH * 1.4f, angryBrowPaint)
         }
 
         drawMouth(canvas, vcx + vw * 0.03f, eyeY + vh * 0.28f, vw * 0.12f, vh * 0.08f)
 
-        if (mood == BotMood.DIZZY) canvas.restore()
+        if (currentMood == BotMood.DIZZY) canvas.restore()
     }
 
     // ──────────────────────────────────────────────────────────
@@ -243,7 +244,7 @@ class FloatingBotView(context: Context) : View(context) {
     // ──────────────────────────────────────────────────────────
     private fun drawEye(canvas: Canvas, cx: Float, cy: Float, ew: Float, eh: Float) {
         val scaleY = when {
-            mood == BotMood.SLEEPY -> 0.15f
+            currentMood == BotMood.SLEEPY -> 0.15f
             expression == BotExpression.SLEEPING -> 0.06f
             expression == BotExpression.THINKING -> if (cx < width / 2f) 0.4f else 1f
             else -> 1f - (blinkProgress * 0.95f)
@@ -285,7 +286,7 @@ class FloatingBotView(context: Context) : View(context) {
     ): Pair<Float, Float> {
 
         // Dizzy — pupils swirl independent of touch
-        if (mood == BotMood.DIZZY) {
+        if (currentMood == BotMood.DIZZY) {
             val angle = Math.toRadians((dizzySpinAngle * 2.5f).toDouble())
             return Pair((cos(angle) * maxX * 0.6f).toFloat(), (sin(angle) * maxY * 0.6f).toFloat())
         }
@@ -368,9 +369,9 @@ class FloatingBotView(context: Context) : View(context) {
     // ──────────────────────────────────────────────────────────
     private fun drawMouth(canvas: Canvas, cx: Float, cy: Float, hw: Float, hh: Float) {
         when {
-            mood == BotMood.SLEEPY -> drawSleepMouth(canvas, cx, cy, hw)
-            mood == BotMood.DIZZY  -> drawWavyMouth(canvas, cx, cy, hw, hh)
-            mood == BotMood.ANGRY  -> drawAngryMouth(canvas, cx, cy, hw, hh)
+            currentMood == BotMood.SLEEPY -> drawSleepMouth(canvas, cx, cy, hw)
+            currentMood == BotMood.DIZZY  -> drawWavyMouth(canvas, cx, cy, hw, hh)
+            currentMood == BotMood.ANGRY  -> drawAngryMouth(canvas, cx, cy, hw, hh)
             expression == BotExpression.SLEEPING -> drawSleepMouth(canvas, cx, cy, hw)
             expression == BotExpression.SPEAKING -> drawSpeakMouth(canvas, cx, cy, hw, hh)
             else -> drawCupSmile(canvas, cx, cy, hw, hh)
@@ -449,7 +450,7 @@ class FloatingBotView(context: Context) : View(context) {
     private fun scheduleNextBlink() {
         val delay = Random.nextLong(2500, 5500)
         blinkRunnable = Runnable {
-            if (expression != BotExpression.SLEEPING && mood != BotMood.SLEEPY) performBlink()
+            if (expression != BotExpression.SLEEPING && currentMood != BotMood.SLEEPY) performBlink()
             scheduleNextBlink()
         }
         blinkScheduler?.postDelayed(blinkRunnable!!, delay)
