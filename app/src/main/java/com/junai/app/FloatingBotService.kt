@@ -4,10 +4,14 @@ import android.app.*
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.*
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.view.*
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.animation.ValueAnimator
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import kotlin.math.*
 import kotlin.random.Random
@@ -42,6 +46,12 @@ class FloatingBotService : Service() {
     private lateinit var menuView: FloatingMenuView
     private lateinit var menuParams: WindowManager.LayoutParams
     private var menuAttached = false
+
+    private lateinit var inputView: FloatingInputView
+    private lateinit var inputParams: WindowManager.LayoutParams
+    private var inputAttached = false
+
+    private var speechRecognizer: SpeechRecognizer? = null
 
     private var screenWidth  = 0
     private var screenHeight = 0
@@ -81,6 +91,7 @@ class FloatingBotService : Service() {
         startForeground(NOTIF_ID, buildNotification())
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        CommandExecutor.init(this)
 
         val dm       = resources.displayMetrics
         screenWidth  = dm.widthPixels
@@ -105,7 +116,7 @@ class FloatingBotService : Service() {
         botView = FloatingBotView(this)
         botView.setOnTouchListener(botTouchListener)
 
-        // ── Menu view — full screen, transparent, focusable when shown ──
+        // ── Menu view ──
         menuView = FloatingMenuView(this)
         menuParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -118,6 +129,24 @@ class FloatingBotService : Service() {
 
         menuView.onActionSelected = { action -> handleMenuAction(action) }
         menuView.onDismiss = { detachMenu() }
+
+        // ── Input view ──
+        inputView = FloatingInputView(this)
+        inputParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            overlayType(),
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        }
+        inputView.onSubmit = { text ->
+            CommandExecutor.execute(this, text)
+        }
+        inputView.onDismiss = { detachInput() }
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         botView.randomEyeEnabled = prefs.getBoolean(KEY_RANDOM_EYE, false)
@@ -163,6 +192,8 @@ class FloatingBotService : Service() {
         botView.destroy()
         if (botView.isAttachedToWindow) windowManager.removeView(botView)
         detachMenu()
+        detachInput()
+        speechRecognizer?.destroy()
         JunAccessibilityService.onTouch      = null
         JunAccessibilityService.onTouchClear = null
     }
@@ -170,13 +201,12 @@ class FloatingBotService : Service() {
     override fun onBind(intent: Intent?) = null
 
     // ──────────────────────────────────────────────────────────
-    // BOT TOUCH — drag + tap-to-open-menu
+    // BOT TOUCH
     // ──────────────────────────────────────────────────────────
     private val botTouchListener = View.OnTouchListener { _, event ->
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 if (roamingEnabled) pauseRoaming() else stopBobbing()
-
                 initialX      = botParams.x
                 initialY      = botParams.y
                 initialTouchX = event.rawX
@@ -212,7 +242,6 @@ class FloatingBotService : Service() {
                 botView.clearRoamDirection()
 
                 if (wasTap) {
-                    // Tap detected — open menu
                     if (roamingEnabled) {
                         currentRoamX = botParams.x.toFloat()
                         currentRoamY = botParams.y.toFloat()
@@ -254,8 +283,9 @@ class FloatingBotService : Service() {
             try { windowManager.removeView(menuView) } catch (e: Exception) { }
             menuAttached = false
         }
-        // Resume idle behavior
-        if (roamingEnabled) resumeRoaming() else startBobbing()
+        if (!inputAttached) {
+            if (roamingEnabled) resumeRoaming() else startBobbing()
+        }
     }
 
     private fun handleMenuAction(action: FloatingMenuView.MenuAction) {
@@ -271,26 +301,95 @@ class FloatingBotService : Service() {
                 detachMenu()
             }
             FloatingMenuView.MenuAction.MESSAGE -> {
-                // Opens main app with a flag to focus message input
-                val intent = Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    putExtra("focus_input", true)
-                }
-                startActivity(intent)
                 detachMenu()
+                openInput()
             }
             FloatingMenuView.MenuAction.SPEAK -> {
-                // Opens main app with a flag to trigger voice input
-                val intent = Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    putExtra("trigger_voice", true)
-                }
-                startActivity(intent)
                 detachMenu()
+                startBackgroundSTT()
             }
             FloatingMenuView.MenuAction.BACK -> {
                 detachMenu()
             }
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // FLOATING TEXT INPUT
+    // ──────────────────────────────────────────────────────────
+    private fun openInput() {
+        if (!inputAttached) {
+            try {
+                windowManager.addView(inputView, inputParams)
+                inputAttached = true
+            } catch (e: Exception) { return }
+        }
+        inputView.show()
+    }
+
+    private fun detachInput() {
+        if (inputAttached) {
+            try { windowManager.removeView(inputView) } catch (e: Exception) { }
+            inputAttached = false
+        }
+        if (roamingEnabled) resumeRoaming() else startBobbing()
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // BACKGROUND STT
+    // ──────────────────────────────────────────────────────────
+    private fun startBackgroundSTT() {
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.RECORD_AUDIO
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            val permIntent = Intent(this, VoicePermissionActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(permIntent)
+            return
+        }
+
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            Toast.makeText(this, "Speech recognition available nahi hai", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        botView.expression = BotExpression.LISTENING
+
+        speechRecognizer?.destroy()
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
+            setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) {}
+                override fun onBeginningOfSpeech() {}
+                override fun onRmsChanged(rmsdB: Float) {}
+                override fun onBufferReceived(buffer: ByteArray?) {}
+                override fun onEndOfSpeech() {
+                    mainHandler.post { botView.expression = BotExpression.THINKING }
+                }
+                override fun onError(error: Int) {
+                    mainHandler.post {
+                        botView.expression = BotExpression.NEURAL
+                        Toast.makeText(this@FloatingBotService, "Sun nahi paayi 😅", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                override fun onResults(results: Bundle?) {
+                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    mainHandler.post { botView.expression = BotExpression.NEURAL }
+                    val spoken = matches?.firstOrNull()
+                    if (!spoken.isNullOrEmpty()) {
+                        CommandExecutor.execute(this@FloatingBotService, spoken)
+                    }
+                }
+                override fun onPartialResults(partialResults: Bundle?) {}
+                override fun onEvent(eventType: Int, params: Bundle?) {}
+            })
+
+            val recIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, java.util.Locale.getDefault())
+                putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
+            }
+            startListening(recIntent)
         }
     }
 
@@ -319,7 +418,7 @@ class FloatingBotService : Service() {
     }
 
     private fun roamToNextTarget() {
-        if (!roamingEnabled || isDragging || menuAttached) return
+        if (!roamingEnabled || isDragging || menuAttached || inputAttached) return
 
         val margin = botSizePx * 0.3f
         targetRoamX = Random.nextFloat() * (screenWidth  - botSizePx - margin * 2) + margin
@@ -341,7 +440,7 @@ class FloatingBotService : Service() {
             this.duration = duration
             interpolator  = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                if (!isDragging && !menuAttached) {
+                if (!isDragging && !menuAttached && !inputAttached) {
                     currentRoamX = it.animatedValue as Float
                     botParams.x  = currentRoamX.toInt()
                     try { windowManager.updateViewLayout(botView, botParams) } catch (e: Exception) { }
@@ -355,14 +454,14 @@ class FloatingBotService : Service() {
             startDelay    = 80
             interpolator  = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                if (!isDragging && !menuAttached) {
+                if (!isDragging && !menuAttached && !inputAttached) {
                     currentRoamY = it.animatedValue as Float
                     botParams.y  = currentRoamY.toInt()
                     try { windowManager.updateViewLayout(botView, botParams) } catch (e: Exception) { }
                 }
             }
             doOnEnd {
-                if (!isDragging && !menuAttached) {
+                if (!isDragging && !menuAttached && !inputAttached) {
                     botView.clearRoamDirection()
                     val pause = Random.nextLong(800, 2500)
                     roamRunnable = Runnable { roamToNextTarget() }
@@ -401,7 +500,7 @@ class FloatingBotService : Service() {
     // BOBBING
     // ──────────────────────────────────────────────────────────
     private fun startBobbing() {
-        if (menuAttached) return
+        if (menuAttached || inputAttached) return
         bobbingAnimator?.cancel()
         bobbingAnimator = ValueAnimator.ofFloat(-12f, 12f).apply {
             duration     = 1800
@@ -409,7 +508,7 @@ class FloatingBotService : Service() {
             repeatMode   = ValueAnimator.REVERSE
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener {
-                if (!isDragging && !roamingEnabled && !menuAttached) {
+                if (!isDragging && !roamingEnabled && !menuAttached && !inputAttached) {
                     botParams.y = bobbingBaseY + (it.animatedValue as Float).toInt()
                     windowManager.updateViewLayout(botView, botParams)
                 }
@@ -441,6 +540,7 @@ class FloatingBotService : Service() {
             stopRoaming()
             stopBobbing()
             detachMenu()
+            detachInput()
             if (botView.isAttachedToWindow) windowManager.removeView(botView)
         }
     }
