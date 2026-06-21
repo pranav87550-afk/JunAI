@@ -10,7 +10,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra("title") ?: "Reminder"
         val time = intent.getStringExtra("time") ?: ""
 
-        // Start service first
+        // start service first
         val serviceIntent = Intent(context, AlarmService::class.java).apply {
             putExtra("title", title)
             putExtra("time", time)
