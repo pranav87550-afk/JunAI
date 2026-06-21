@@ -19,14 +19,12 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         const val PREFS_NAME           = "mini_jun_prefs"
         const val KEY_MINI_JUN_ENABLED = "mini_jun_enabled"
         const val KEY_RANDOM_EYE       = "random_eye_enabled"
-        const val KEY_TOUCH_EYE        = "touch_eye_enabled"
         const val KEY_ROAMING          = "roaming_enabled"
     }
 
     private lateinit var miniJunSwitch:   Switch
     private lateinit var roamSwitch:      Switch
     private lateinit var randomEyeSwitch: Switch
-    private lateinit var touchEyeSwitch:  Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,19 +33,15 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         miniJunSwitch   = findViewById(R.id.miniJunSwitch)
         roamSwitch      = findViewById(R.id.roamSwitch)
         randomEyeSwitch = findViewById(R.id.randomEyeSwitch)
-        touchEyeSwitch  = findViewById(R.id.touchEyeSwitch)
 
-        // Load saved state
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         miniJunSwitch.isChecked   = prefs.getBoolean(KEY_MINI_JUN_ENABLED, false)
         roamSwitch.isChecked      = prefs.getBoolean(KEY_ROAMING, false)
         randomEyeSwitch.isChecked = prefs.getBoolean(KEY_RANDOM_EYE, false)
-        touchEyeSwitch.isChecked  = false
 
         updateSwitchColor(miniJunSwitch,   miniJunSwitch.isChecked)
         updateSwitchColor(roamSwitch,      roamSwitch.isChecked)
         updateSwitchColor(randomEyeSwitch, randomEyeSwitch.isChecked)
-        updateSwitchColor(touchEyeSwitch,  false)
 
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
 
@@ -67,15 +61,13 @@ class MiniJunSettingsActivity : AppCompatActivity() {
             updateSwitchColor(roamSwitch, isChecked)
             saveBoolean(KEY_ROAMING, isChecked)
 
-            if (isChecked) {
-                // Roaming on hone pe random eye off — bot khud move karega
+            if (isChecked && randomEyeSwitch.isChecked) {
                 randomEyeSwitch.isChecked = false
                 updateSwitchColor(randomEyeSwitch, false)
                 saveBoolean(KEY_RANDOM_EYE, false)
-                Toast.makeText(this, "Jun ab ghumega!", Toast.LENGTH_SHORT).show()
             }
 
-            restartBotService()
+            notifyServicePrefsChanged()
         }
 
         // ── Random Eye Movement ───────────────────────────────
@@ -83,32 +75,20 @@ class MiniJunSettingsActivity : AppCompatActivity() {
             updateSwitchColor(randomEyeSwitch, isChecked)
 
             if (isChecked && roamSwitch.isChecked) {
-                // Roaming chal raha hai — random eye allowed nahi
                 roamSwitch.isChecked = false
                 updateSwitchColor(roamSwitch, false)
                 saveBoolean(KEY_ROAMING, false)
             }
 
             saveBoolean(KEY_RANDOM_EYE, isChecked)
-            restartBotService()
-        }
-
-        // ── Touch Tracking — Coming Soon ──────────────────────
-        touchEyeSwitch.setOnCheckedChangeListener { _, isChecked ->
-            updateSwitchColor(touchEyeSwitch, isChecked)
-            if (isChecked) {
-                touchEyeSwitch.isChecked = false
-                updateSwitchColor(touchEyeSwitch, false)
-                Toast.makeText(this, "Coming Soon!", Toast.LENGTH_SHORT).show()
-            }
+            notifyServicePrefsChanged()
         }
     }
 
     override fun onResume() {
         super.onResume()
         if (miniJunSwitch.isChecked && hasOverlayPermission()) {
-            startBotService()
-            saveBoolean(KEY_MINI_JUN_ENABLED, true)
+            startBotServiceIfNeeded()
         }
     }
 
@@ -122,7 +102,7 @@ class MiniJunSettingsActivity : AppCompatActivity() {
 
     private fun handleBotEnable() {
         if (hasOverlayPermission()) {
-            startBotService()
+            startBotServiceIfNeeded()
             saveBoolean(KEY_MINI_JUN_ENABLED, true)
         } else {
             Toast.makeText(this,
@@ -148,7 +128,7 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == OVERLAY_REQUEST_CODE) {
             if (hasOverlayPermission()) {
-                startBotService()
+                startBotServiceIfNeeded()
                 saveBoolean(KEY_MINI_JUN_ENABLED, true)
             } else {
                 miniJunSwitch.isChecked = false
@@ -161,24 +141,29 @@ class MiniJunSettingsActivity : AppCompatActivity() {
     }
 
     // ──────────────────────────────────────────────────────────
-    // SERVICE
+    // SERVICE — single start, live pref reload (no restart = no crash)
     // ──────────────────────────────────────────────────────────
-    private fun startBotService() {
+    private var serviceStarted = false
+
+    private fun startBotServiceIfNeeded() {
+        if (serviceStarted) return
         val intent = Intent(this, FloatingBotService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             startForegroundService(intent) else startService(intent)
+        serviceStarted = true
     }
 
     private fun stopBotService() {
         stopService(Intent(this, FloatingBotService::class.java))
+        serviceStarted = false
     }
 
-    private fun restartBotService() {
-        if (miniJunSwitch.isChecked && hasOverlayPermission()) {
-            stopBotService()
-            android.os.Handler(android.os.Looper.getMainLooper())
-                .postDelayed({ startBotService() }, 300)
+    private fun notifyServicePrefsChanged() {
+        if (!miniJunSwitch.isChecked || !hasOverlayPermission()) return
+        val intent = Intent(this, FloatingBotService::class.java).apply {
+            action = FloatingBotService.ACTION_RELOAD_PREFS
         }
+        startService(intent)
     }
 
     // ──────────────────────────────────────────────────────────
