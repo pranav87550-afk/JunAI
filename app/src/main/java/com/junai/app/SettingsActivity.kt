@@ -75,20 +75,21 @@ class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         }
 
-        // Clear chat
-    findViewById<Button>(R.id.btnClearChat).setOnClickListener {
-    AlertDialog.Builder(this, R.style.DarkDialog)
-        .setTitle("Clear Chat")
-        .setMessage("Are you sure? All chat will be deleted!")
-        .setPositiveButton("Yes") { _, _ ->
-            getSharedPreferences("chat_prefs", MODE_PRIVATE)
-                .edit()
-                .putString("chat_list", "[]")
-                .apply()
-            Toast.makeText(this, "Chat cleared!", Toast.LENGTH_SHORT).show()
-        }
-        .setNegativeButton("No", null)
-        .show()
+    // Clear chat
+        findViewById<Button>(R.id.btnClearChat).setOnClickListener {
+            AlertDialog.Builder(this, R.style.DarkDialog)
+                .setTitle("Clear Chat")
+                .setMessage("Are you sure? All chat history will be deleted!")
+                .setPositiveButton("Yes") { _, _ ->
+                    getSharedPreferences("chat_prefs", MODE_PRIVATE)
+                        .edit()
+                        .putString("chat_list", "[]")
+                        .apply()
+                    sendBroadcast(Intent("com.junai.app.CLEAR_CHAT"))
+                    Toast.makeText(this, "Chat cleared!", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("No", null)
+                .show()
         }
 
         // Export chat
