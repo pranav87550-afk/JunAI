@@ -14,6 +14,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONArray
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -173,15 +176,24 @@ class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun factoryReset() {
-        getSharedPreferences("chat_prefs", MODE_PRIVATE).edit().clear().apply()
-        getSharedPreferences("notes_prefs", MODE_PRIVATE).edit().clear().apply()
-        getSharedPreferences("todo_prefs", MODE_PRIVATE).edit().clear().apply()
-        getSharedPreferences("memory_prefs", MODE_PRIVATE).edit().clear().apply()
-        getSharedPreferences("unanswered_prefs", MODE_PRIVATE).edit().clear().apply()
-        getSharedPreferences("settings_prefs", MODE_PRIVATE).edit().clear().apply()
-        clearAllReminders()
-        Toast.makeText(this, "Factory reset complete!", Toast.LENGTH_SHORT).show()
-        finish()
+    getSharedPreferences("chat_prefs", MODE_PRIVATE).edit().clear().apply()
+    getSharedPreferences("notes_prefs", MODE_PRIVATE).edit().clear().apply()
+    getSharedPreferences("todo_prefs", MODE_PRIVATE).edit().clear().apply()
+    getSharedPreferences("memory_prefs", MODE_PRIVATE).edit().clear().apply()
+    getSharedPreferences("unanswered_prefs", MODE_PRIVATE).edit().clear().apply()
+    getSharedPreferences("settings_prefs", MODE_PRIVATE).edit().clear().apply()
+    getSharedPreferences("draw_prefs", MODE_PRIVATE).edit().clear().apply()
+    clearAllReminders()
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            AppDatabase.getInstance(applicationContext).clearAllTables()
+        } catch (e: Exception) {
+            // Database may not exist yet — safe to ignore
+        }
+    }
+    sendBroadcast(Intent("com.junai.app.CLEAR_CHAT"))
+    Toast.makeText(this, "Factory reset complete! All data wiped.", Toast.LENGTH_LONG).show()
+    finish()
     }
 
     override fun onDestroy() {
