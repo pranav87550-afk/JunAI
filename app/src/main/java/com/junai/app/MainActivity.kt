@@ -528,27 +528,20 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         saveChat()
     }
 
-    private val clearChatReceiver = object : android.content.BroadcastReceiver() {
-    override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+    override fun onResume() {
+    super.onResume()
+    voiceEnabled = getSharedPreferences("settings_prefs", MODE_PRIVATE)
+        .getBoolean("voice_enabled", false)
+
+    // Sync chat with SharedPrefs — handles clear chat from Settings
+    val savedJson = getSharedPreferences("chat_prefs", MODE_PRIVATE)
+        .getString("chat_list", "[]") ?: "[]"
+    val savedCount = org.json.JSONArray(savedJson).length()
+    if (savedCount != messages.size) {
         messages.clear()
+        loadChat()
         chatAdapter.notifyDataSetChanged()
     }
-}
-
-override fun onStart() {
-    super.onStart()
-    registerReceiver(clearChatReceiver, android.content.IntentFilter("com.junai.app.CLEAR_CHAT"))
-}
-
-override fun onStop() {
-    super.onStop()
-    unregisterReceiver(clearChatReceiver)
-}
-
-    override fun onResume() {
-        super.onResume()
-        voiceEnabled = getSharedPreferences("settings_prefs", MODE_PRIVATE)
-            .getBoolean("voice_enabled", false)
     }
 
     override fun onInit(status: Int) {
