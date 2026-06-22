@@ -48,17 +48,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var learningRepo: LearningRepository
 
     private val speechLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val data = result.data
-            val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            if (!results.isNullOrEmpty()) {
-                val spokenText = results[0]
-                val messageInput = findViewById<EditText>(R.id.messageInput)
-                messageInput.setText(spokenText)
-            }
+    ActivityResultContracts.StartActivityForResult()
+) { result ->
+    if (result.resultCode == RESULT_OK) {
+        val data = result.data
+        val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+        if (!results.isNullOrEmpty()) {
+            val spokenText = results[0]
+            val messageInput = findViewById<EditText>(R.id.messageInput)
+            messageInput.setText(spokenText)
+            // Auto-trigger send immediately after STT
+            findViewById<ImageButton>(R.id.sendButton).performClick()
         }
+    }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
