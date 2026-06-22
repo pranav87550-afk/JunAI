@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.*
-import org.json.JSONObject
+import org.json.JSONArray
 import java.io.IOException
 import java.net.URLEncoder
 
@@ -77,7 +77,6 @@ class TranslatorActivity : AppCompatActivity() {
             val cacheKey = "translate:${srcCode}_${tgtCode}:${text.lowercase().trim()}"
 
             CoroutineScope(Dispatchers.IO).launch {
-                // Check cache first
                 val cached = AppDatabase.getInstance(this@TranslatorActivity)
                     .knowledgeDao()
                     .getAnswer(cacheKey)
@@ -96,40 +95,55 @@ class TranslatorActivity : AppCompatActivity() {
                     outputText.setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
                 }
 
-                val encoded = URLEncoder.encode(text, "UTF-8")
-                val url = "https://api.mymemory.translated.net/get?q=$encoded&langpair=$srcCode|$tgtCode&de=a@b.com"
+                try {
+                    val encoded = URLEncoder.encode(text, "UTF-8")
+                    val url = "https://translate.googleapis.com/translate_a/single" +
+                        "?client=gtx&sl=$srcCode&tl=$tgtCode&dt=t&q=$encoded"
 
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                    .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                    .build()
+                    val client = OkHttpClient.Builder()
+                        .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                        .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                        .build()
 
-                val request = Request.Builder().url(url).get().build()
+                    val request = Request.Builder()
+                        .url(url)
+                        .addHeader("User-Agent", "Mozilla/5.0")
+                        .get()
+                        .build()
 
-                client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        runOnUiThread {
-                            outputText.text = "Network error: ${e.message}"
-                            outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
+                    client.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            runOnUiThread {
+                                outputText.text = "Network error: ${e.message}"
+                                outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
+                            }
                         }
-                    }
 
-                    override fun onResponse(call: Call, response: Response) {
-                        val body = response.body?.string()
-                        runOnUiThread {
-                            try {
-                                val json = JSONObject(body ?: "")
-                                val responseStatus = json.getInt("responseStatus")
+                        override fun onResponse(call: Call, response: Response) {
+                            val body = response.body?.string()
+                            runOnUiThread {
+                                try {
+                                    // Google returns nested JSON array
+                                    // Structure: [[[translatedText, original, ...],...],...]
+                                    val outer = JSONArray(body)
+                                    val inner = outer.getJSONArray(0)
+                                    val sb = StringBuilder()
+                                    for (i in 0 until inner.length()) {
+                                        val part = inner.getJSONArray(i)
+                                        val chunk = part.optString(0)
+                                        if (chunk.isNotEmpty()) sb.append(chunk)
+                                    }
+                                    val translated = sb.toString().trim()
 
-                                if (responseStatus == 200) {
-                                    val translated = json
-                                        .getJSONObject("responseData")
-                                        .getString("translatedText")
+                                    if (translated.isEmpty()) {
+                                        outputText.text = "Translation failed. Try again."
+                                        outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
+                                        return@runOnUiThread
+                                    }
 
                                     outputText.text = translated
                                     outputText.setTextColor(android.graphics.Color.WHITE)
 
-                                    // Save to cache
                                     CoroutineScope(Dispatchers.IO).launch {
                                         AppDatabase.getInstance(this@TranslatorActivity)
                                             .knowledgeDao()
@@ -139,17 +153,20 @@ class TranslatorActivity : AppCompatActivity() {
                                                 category = "Translation"
                                             ))
                                     }
-                                } else {
-                                    outputText.text = "Translation error (status $responseStatus)"
+
+                                } catch (e: Exception) {
+                                    outputText.text = "Error: ${e.message}"
                                     outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
                                 }
-                            } catch (e: Exception) {
-                                outputText.text = "Error: ${e.message}"
-                                outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
                             }
                         }
+                    })
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        outputText.text = "Error: ${e.message}"
+                        outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
                     }
-                })
+                }
             }
         }
     }
