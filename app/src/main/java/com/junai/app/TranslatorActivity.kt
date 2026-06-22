@@ -7,10 +7,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
+import java.net.URLEncoder
 
 class TranslatorActivity : AppCompatActivity() {
 
@@ -30,13 +29,6 @@ class TranslatorActivity : AppCompatActivity() {
         "Turkish" to "tr",
         "Bengali" to "bn",
         "Urdu" to "ur"
-    )
-
-    // Free public LibreTranslate mirrors
-    private val apiMirrors = listOf(
-        "https://libretranslate.com/translate",
-        "https://translate.argosopentech.com/translate",
-        "https://libretranslate.de/translate"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,9 +74,10 @@ class TranslatorActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Check cache first
             val cacheKey = "translate:${srcCode}_${tgtCode}:${text.lowercase().trim()}"
+
             CoroutineScope(Dispatchers.IO).launch {
+                // Check cache first
                 val cached = AppDatabase.getInstance(this@TranslatorActivity)
                     .knowledgeDao()
                     .getAnswer(cacheKey)
@@ -103,75 +96,61 @@ class TranslatorActivity : AppCompatActivity() {
                     outputText.setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
                 }
 
-                tryTranslateWithMirrors(text, srcCode, tgtCode, cacheKey, outputText, 0)
-            }
-        }
-    }
+                val encoded = URLEncoder.encode(text, "UTF-8")
+                val url = "https://api.mymemory.translated.net/get?q=$encoded&langpair=$srcCode|$tgtCode&de=a@b.com"
 
-    private fun tryTranslateWithMirrors(
-        text: String,
-        srcCode: String,
-        tgtCode: String,
-        cacheKey: String,
-        outputText: TextView,
-        mirrorIndex: Int
-    ) {
-        if (mirrorIndex >= apiMirrors.size) {
-            runOnUiThread {
-                outputText.text = "Translation failed. Check internet connection."
-                outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
-            }
-            return
-        }
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
 
-        val url = apiMirrors[mirrorIndex]
-        val json = JSONObject().apply {
-            put("q", text)
-            put("source", srcCode)
-            put("target", tgtCode)
-            put("format", "text")
-        }
+                val request = Request.Builder().url(url).get().build()
 
-        val body = json.toString().toRequestBody("application/json".toMediaType())
-        val request = Request.Builder()
-            .url(url)
-            .post(body)
-            .addHeader("Content-Type", "application/json")
-            .build()
-
-        OkHttpClient().newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                // Try next mirror
-                tryTranslateWithMirrors(text, srcCode, tgtCode, cacheKey, outputText, mirrorIndex + 1)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body?.string()
-                try {
-                    val translated = JSONObject(responseBody ?: "")
-                        .getString("translatedText")
-
-                    runOnUiThread {
-                        outputText.text = translated
-                        outputText.setTextColor(android.graphics.Color.WHITE)
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        runOnUiThread {
+                            outputText.text = "Network error: ${e.message}"
+                            outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
+                        }
                     }
 
-                    // Save to cache
-                    CoroutineScope(Dispatchers.IO).launch {
-                        AppDatabase.getInstance(this@TranslatorActivity)
-                            .knowledgeDao()
-                            .insert(KnowledgeEntity(
-                                question = cacheKey,
-                                answer = translated,
-                                category = "Translation"
-                            ))
-                    }
+                    override fun onResponse(call: Call, response: Response) {
+                        val body = response.body?.string()
+                        runOnUiThread {
+                            try {
+                                val json = JSONObject(body ?: "")
+                                val responseStatus = json.getInt("responseStatus")
 
-                } catch (e: Exception) {
-                    // This mirror gave bad response — try next
-                    tryTranslateWithMirrors(text, srcCode, tgtCode, cacheKey, outputText, mirrorIndex + 1)
-                }
+                                if (responseStatus == 200) {
+                                    val translated = json
+                                        .getJSONObject("responseData")
+                                        .getString("translatedText")
+
+                                    outputText.text = translated
+                                    outputText.setTextColor(android.graphics.Color.WHITE)
+
+                                    // Save to cache
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        AppDatabase.getInstance(this@TranslatorActivity)
+                                            .knowledgeDao()
+                                            .insert(KnowledgeEntity(
+                                                question = cacheKey,
+                                                answer = translated,
+                                                category = "Translation"
+                                            ))
+                                    }
+                                } else {
+                                    outputText.text = "Translation error (status $responseStatus)"
+                                    outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
+                                }
+                            } catch (e: Exception) {
+                                outputText.text = "Error: ${e.message}"
+                                outputText.setTextColor(android.graphics.Color.parseColor("#E53935"))
+                            }
+                        }
+                    }
+                })
             }
-        })
+        }
     }
 }
