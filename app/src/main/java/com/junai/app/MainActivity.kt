@@ -526,6 +526,23 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         saveChat()
     }
 
+    private val clearChatReceiver = object : android.content.BroadcastReceiver() {
+    override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+        messages.clear()
+        chatAdapter.notifyDataSetChanged()
+    }
+}
+
+override fun onStart() {
+    super.onStart()
+    registerReceiver(clearChatReceiver, android.content.IntentFilter("com.junai.app.CLEAR_CHAT"))
+}
+
+override fun onStop() {
+    super.onStop()
+    unregisterReceiver(clearChatReceiver)
+}
+
     override fun onResume() {
         super.onResume()
         voiceEnabled = getSharedPreferences("settings_prefs", MODE_PRIVATE)
