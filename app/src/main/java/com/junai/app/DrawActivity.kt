@@ -6,7 +6,9 @@ import android.os.Bundle
 import android.os.Environment
 import android.widget.ImageButton
 import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -16,16 +18,50 @@ import java.util.Locale
 
 class DrawActivity : AppCompatActivity() {
 
+    private val DRAW_PREFS = "draw_prefs"
+    private val KEY_AUTO_SAVE = "auto_save_enabled"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draw)
 
         val drawingView = findViewById<DrawingView>(R.id.drawingView)
+        val prefs = getSharedPreferences(DRAW_PREFS, MODE_PRIVATE)
 
-        findViewById<ImageButton>(R.id.backButton).setOnClickListener {
-            saveDrawing(drawingView)
-            finish()
+        // Auto-save toggle
+        val autoSaveSwitch = findViewById<Switch>(R.id.autoSaveSwitch)
+        autoSaveSwitch.isChecked = prefs.getBoolean(KEY_AUTO_SAVE, true)
+        autoSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(KEY_AUTO_SAVE, isChecked).apply()
+            val msg = if (isChecked) "Auto-save enabled" else "Auto-save disabled"
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
+
+        // Back button
+        findViewById<ImageButton>(R.id.backButton).setOnClickListener {
+            val autoSave = prefs.getBoolean(KEY_AUTO_SAVE, true)
+            if (autoSave) {
+                saveDrawing(drawingView)
+                finish()
+            } else {
+                AlertDialog.Builder(this)
+                    .setTitle("Save Drawing?")
+                    .setMessage("Auto-save is off. Do you want to save before leaving?")
+                    .setPositiveButton("Save") { _, _ ->
+                        saveDrawing(drawingView)
+                        finish()
+                    }
+                    .setNegativeButton("Discard") { _, _ -> finish() }
+                    .setNeutralButton("Cancel", null)
+                    .show()
+            }
+        }
+
+        // Manual save button
+        findViewById<ImageButton>(R.id.saveButton).setOnClickListener {
+            saveDrawing(drawingView)
+        }
+
         findViewById<ImageButton>(R.id.undoButton).setOnClickListener { drawingView.undo() }
         findViewById<ImageButton>(R.id.redoButton).setOnClickListener { drawingView.redo() }
         findViewById<ImageButton>(R.id.eraserButton).setOnClickListener { drawingView.setEraser() }
@@ -64,12 +100,11 @@ class DrawActivity : AppCompatActivity() {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
             }
 
-            // Gallery mein refresh karo
             android.media.MediaScannerConnection.scanFile(
                 this, arrayOf(file.absolutePath), null, null
             )
 
-            Toast.makeText(this, "Drawing saved to Pictures/JunAI! 🎨", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Drawing saved to Pictures/JunAI!", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
