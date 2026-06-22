@@ -20,11 +20,13 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         const val KEY_MINI_JUN_ENABLED = "mini_jun_enabled"
         const val KEY_RANDOM_EYE       = "random_eye_enabled"
         const val KEY_ROAMING          = "roaming_enabled"
+        const val KEY_APP_SENSE        = "app_sense_enabled"
     }
 
     private lateinit var miniJunSwitch:   Switch
     private lateinit var roamSwitch:      Switch
     private lateinit var randomEyeSwitch: Switch
+    private lateinit var appSenseSwitch:  Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,24 +35,26 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         miniJunSwitch   = findViewById(R.id.miniJunSwitch)
         roamSwitch      = findViewById(R.id.roamSwitch)
         randomEyeSwitch = findViewById(R.id.randomEyeSwitch)
+        appSenseSwitch  = findViewById(R.id.appSenseSwitch)
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         miniJunSwitch.isChecked   = prefs.getBoolean(KEY_MINI_JUN_ENABLED, false)
         roamSwitch.isChecked      = prefs.getBoolean(KEY_ROAMING, false)
         randomEyeSwitch.isChecked = prefs.getBoolean(KEY_RANDOM_EYE, false)
+        appSenseSwitch.isChecked  = prefs.getBoolean(KEY_APP_SENSE, false)
 
         updateSwitchColor(miniJunSwitch,   miniJunSwitch.isChecked)
         updateSwitchColor(roamSwitch,      roamSwitch.isChecked)
         updateSwitchColor(randomEyeSwitch, randomEyeSwitch.isChecked)
+        updateSwitchColor(appSenseSwitch,  appSenseSwitch.isChecked)
 
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
 
         // ── Mini Jun ON/OFF ───────────────────────────────────
         miniJunSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateSwitchColor(miniJunSwitch, isChecked)
-            if (isChecked) {
-                handleBotEnable()
-            } else {
+            if (isChecked) handleBotEnable()
+            else {
                 stopBotService()
                 saveBoolean(KEY_MINI_JUN_ENABLED, false)
             }
@@ -60,35 +64,87 @@ class MiniJunSettingsActivity : AppCompatActivity() {
         roamSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateSwitchColor(roamSwitch, isChecked)
             saveBoolean(KEY_ROAMING, isChecked)
-
             if (isChecked && randomEyeSwitch.isChecked) {
                 randomEyeSwitch.isChecked = false
                 updateSwitchColor(randomEyeSwitch, false)
                 saveBoolean(KEY_RANDOM_EYE, false)
             }
-
             notifyServicePrefsChanged()
         }
 
         // ── Random Eye Movement ───────────────────────────────
         randomEyeSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateSwitchColor(randomEyeSwitch, isChecked)
-
             if (isChecked && roamSwitch.isChecked) {
                 roamSwitch.isChecked = false
                 updateSwitchColor(roamSwitch, false)
                 saveBoolean(KEY_ROAMING, false)
             }
-
             saveBoolean(KEY_RANDOM_EYE, isChecked)
+            notifyServicePrefsChanged()
+        }
+
+        // ── App Sense ─────────────────────────────────────────
+        appSenseSwitch.setOnCheckedChangeListener { _, isChecked ->
+            updateSwitchColor(appSenseSwitch, isChecked)
+            if (isChecked) {
+                if (!AppSenseManager.hasUsagePermission(this)) {
+                    // Permission nahi hai — directly settings pe bhejo
+                    Toast.makeText(this,
+                        "Please enable Usage Access for JunAI",
+                        Toast.LENGTH_LONG).show()
+                    openUsageAccessSettings()
+                    // Switch wapas off — onResume mein check karenge
+                    appSenseSwitch.isChecked = false
+                    updateSwitchColor(appSenseSwitch, false)
+                    return@setOnCheckedChangeListener
+                }
+            }
+            saveBoolean(KEY_APP_SENSE, isChecked)
             notifyServicePrefsChanged()
         }
     }
 
     override fun onResume() {
         super.onResume()
+        // Check agar user usage settings se wapas aaya
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        if (!prefs.getBoolean(KEY_APP_SENSE, false) &&
+            AppSenseManager.hasUsagePermission(this)) {
+            // Permission mil gayi — switch ON karo
+            appSenseSwitch.isChecked = true
+            updateSwitchColor(appSenseSwitch, true)
+            saveBoolean(KEY_APP_SENSE, true)
+            notifyServicePrefsChanged()
+        }
+
         if (miniJunSwitch.isChecked && hasOverlayPermission()) {
             startBotServiceIfNeeded()
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // USAGE ACCESS SETTINGS — direct redirect
+    // ──────────────────────────────────────────────────────────
+    private fun openUsageAccessSettings() {
+        try {
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                // Try to open directly to JunAI's entry
+                data = Uri.parse("package:$packageName")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback — some devices don't support package URI
+            try {
+                startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+            } catch (ex: Exception) {
+                Toast.makeText(this,
+                    "Please go to Settings → Apps → Special access → Usage access → JunAI",
+                    Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -106,7 +162,7 @@ class MiniJunSettingsActivity : AppCompatActivity() {
             saveBoolean(KEY_MINI_JUN_ENABLED, true)
         } else {
             Toast.makeText(this,
-                "Jun ko screen pe dikhne ke liye permission chahiye",
+                "Jun needs overlay permission to appear on screen",
                 Toast.LENGTH_LONG).show()
             requestOverlayPermission()
         }
@@ -114,12 +170,12 @@ class MiniJunSettingsActivity : AppCompatActivity() {
 
     private fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
             @Suppress("DEPRECATION")
-            startActivityForResult(intent, OVERLAY_REQUEST_CODE)
+            startActivityForResult(
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")),
+                OVERLAY_REQUEST_CODE
+            )
         }
     }
 
@@ -134,14 +190,14 @@ class MiniJunSettingsActivity : AppCompatActivity() {
                 miniJunSwitch.isChecked = false
                 updateSwitchColor(miniJunSwitch, false)
                 Toast.makeText(this,
-                    "Permission nahi mili — Jun show nahi hoga",
+                    "Permission denied — Jun won't appear",
                     Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     // ──────────────────────────────────────────────────────────
-    // SERVICE — single start, live pref reload (no restart = no crash)
+    // SERVICE
     // ──────────────────────────────────────────────────────────
     private var serviceStarted = false
 
@@ -160,10 +216,9 @@ class MiniJunSettingsActivity : AppCompatActivity() {
 
     private fun notifyServicePrefsChanged() {
         if (!miniJunSwitch.isChecked || !hasOverlayPermission()) return
-        val intent = Intent(this, FloatingBotService::class.java).apply {
+        startService(Intent(this, FloatingBotService::class.java).apply {
             action = FloatingBotService.ACTION_RELOAD_PREFS
-        }
-        startService(intent)
+        })
     }
 
     // ──────────────────────────────────────────────────────────
