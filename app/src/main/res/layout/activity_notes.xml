@@ -80,6 +80,18 @@
             android:src="@drawable/ic_send"
             android:padding="10dp"
             android:contentDescription="Add Note"/>
+        
+        <Button
+            android:id="@+id/clearAllNotesButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="Clear All"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:background="@drawable/settings_button_red"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginStart="8dp"/>
 
     </LinearLayout>
 
