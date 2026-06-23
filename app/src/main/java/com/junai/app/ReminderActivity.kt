@@ -72,6 +72,9 @@ class ReminderActivity : AppCompatActivity() {
         val timePicker = findViewById<TimePicker>(R.id.timePicker)
         timePicker.setIs24HourView(false)
 
+        // Force spinner mode to prevent invalid manual input
+        timePicker.descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
+
         findViewById<Button>(R.id.setReminderButton).setOnClickListener {
             setReminder(timePicker)
         }    
@@ -86,8 +89,8 @@ class ReminderActivity : AppCompatActivity() {
             return
         }
 
-        val hour = timePicker.hour
-        val minute = timePicker.minute
+        val hour = timePicker.hour.coerceIn(0, 23)
+        val minute = timePicker.minute.coerceIn(0, 59)
 
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
