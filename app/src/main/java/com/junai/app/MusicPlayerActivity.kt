@@ -81,6 +81,8 @@ class MusicPlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_music_player)
+        // Enter transition
+        overridePendingTransition(R.anim.slide_up_enter, R.anim.slide_down_exit)
 
         seekBar = findViewById(R.id.musicSeekBar)
         currentTime = findViewById(R.id.currentTime)
@@ -91,14 +93,25 @@ class MusicPlayerActivity : AppCompatActivity() {
         songListRecycler = findViewById(R.id.songListRecycler)
         albumArtLayout = findViewById(R.id.albumArtLayout)
 
-        findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+        findViewById<Button>(R.id.backButton).setOnClickListener {
+    finish()
+    overridePendingTransition(R.anim.slide_up_enter, R.anim.slide_down_exit)
+        }
 
         playPauseButton.setOnClickListener {
-            musicService?.togglePlayPause()
-            updatePlayPauseButton()
-            playPauseButton.startAnimation(
-                AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
-            )
+    musicService?.togglePlayPause()
+    updatePlayPauseButton()
+    val pulse = AnimationUtils.loadAnimation(this, R.anim.scale_pulse)
+    pulse.setAnimationListener(object : android.view.animation.Animation.AnimationListener {
+        override fun onAnimationStart(a: android.view.animation.Animation?) {}
+        override fun onAnimationRepeat(a: android.view.animation.Animation?) {}
+        override fun onAnimationEnd(a: android.view.animation.Animation?) {
+            playPauseButton.scaleX = 1f
+            playPauseButton.scaleY = 1f
+            playPauseButton.alpha = 1f
+        }
+    })
+    playPauseButton.startAnimation(pulse)
         }
 
         findViewById<ImageButton>(R.id.nextButton).setOnClickListener {
