@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer red neon glow -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="28dp"/>
+            <gradient
+                android:type="radial"
+                android:startColor="#44FF1744"
+                android:endColor="#00FF1744"
+                android:gradientRadius="80%"/>
+        </shape>
+    </item>
+    <!-- Glass body -->
+    <item android:top="4dp" android:left="4dp" android:right="4dp" android:bottom="4dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp"/>
+            <gradient
+                android:type="linear"
+                android:startColor="#33FFFFFF"
+                android:endColor="#0AFFFFFF"
+                android:angle="135"/>
+            <stroke android:width="1.5dp" android:color="#66FF5252"/>
+        </shape>
+    </item>
+    <!-- Glass shine top-left -->
+    <item android:top="8dp" android:left="8dp" android:right="60dp" android:bottom="100dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp"/>
+            <gradient
+                android:type="linear"
+                android:startColor="#44FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:angle="270"/>
+        </shape>
+    </item>
+</layer-list>
