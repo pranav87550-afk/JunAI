@@ -15,6 +15,8 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 
 data class Note(val title: String, val date: String)
 
@@ -58,6 +60,25 @@ class NotesActivity : AppCompatActivity() {
         }
 
         recyclerView.adapter = adapter
+
+        findViewById<Button>(R.id.clearAllNotesButton).setOnClickListener {
+    if (notes.isEmpty()) {
+        Toast.makeText(this, "No notes to clear!", Toast.LENGTH_SHORT).show()
+        return@setOnClickListener
+    }
+    AlertDialog.Builder(this)
+        .setTitle("Clear All Notes")
+        .setMessage("Are you sure? All ${notes.size} notes will be deleted!")
+        .setPositiveButton("Yes, Delete All") { _, _ ->
+            val size = notes.size
+            notes.clear()
+            adapter.notifyItemRangeRemoved(0, size)
+            saveNotes()
+            Toast.makeText(this, "All notes cleared!", Toast.LENGTH_SHORT).show()
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
+        }
 
         findViewById<ImageButton>(R.id.addNoteButton).setOnClickListener {
             val input = findViewById<EditText>(R.id.searchNotes)
