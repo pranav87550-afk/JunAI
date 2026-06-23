@@ -50,6 +50,7 @@
 
     <!-- Album Art -->
     <LinearLayout
+        android:id="@+id/albumArtLayout"
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:background="@drawable/music_art_bg"
@@ -169,5 +170,23 @@
             android:contentDescription="Next"/>
 
     </LinearLayout>
+
+    <!-- Song List -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="All Songs"
+        android:textColor="#FF5252"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:paddingStart="24dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/songListRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:nestedScrollingEnabled="true"/>
 
 </LinearLayout>
