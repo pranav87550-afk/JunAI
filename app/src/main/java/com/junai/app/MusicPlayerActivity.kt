@@ -1,6 +1,6 @@
 package com.junai.app
 
-import android.app.RingtoneManager
+import android.media.RingtoneManager
 import android.content.ComponentName
 import android.content.ContentUris
 import android.content.ContentValues
