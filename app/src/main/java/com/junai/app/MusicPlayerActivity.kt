@@ -278,32 +278,46 @@ class MusicPlayerActivity : AppCompatActivity() {
     }
 
     private fun setAsRingtone(song: SongItem, type: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.System.canWrite(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
-            intent.data = Uri.parse("package:$packageName")
-            startActivity(intent)
-            Toast.makeText(this, "Allow write settings, then try again", Toast.LENGTH_LONG).show()
-            return
-        }
-        try {
-            val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.TITLE, song.title)
-                put(MediaStore.MediaColumns.MIME_TYPE, "audio/mpeg")
-                put(MediaStore.Audio.Media.IS_RINGTONE, type == RingtoneManager.TYPE_RINGTONE)
-                put(MediaStore.Audio.Media.IS_ALARM, type == RingtoneManager.TYPE_ALARM)
-                put(MediaStore.Audio.Media.IS_MUSIC, false)
-            }
-            val uri = ContentUris.withAppendedId(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
-            )
-            contentResolver.update(uri, values, null, null)
-            RingtoneManager.setActualDefaultRingtoneUri(this, type, uri)
-            val label = if (type == RingtoneManager.TYPE_RINGTONE) "Ringtone" else "Alarm tone"
-            Toast.makeText(this, "Set as $label ✅", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.System.canWrite(this)) {
+        val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
+        intent.data = Uri.parse("package:$packageName")
+        startActivity(intent)
+        Toast.makeText(this, "Allow write settings, then try again", Toast.LENGTH_LONG).show()
+        return
     }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val uri = ContentUris.withAppendedId(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
+        )
+        pendingRenameSong = song
+        pendingRenameName = if (type == RingtoneManager.TYPE_RINGTONE) "RINGTONE" else "ALARM"
+        val pendingIntent = MediaStore.createWriteRequest(contentResolver, listOf(uri))
+        startIntentSenderForResult(pendingIntent.intentSender, 103, null, 0, 0, 0)
+        return
+    }
+    applyRingtone(song, type)
+}
+
+private fun applyRingtone(song: SongItem, type: Int) {
+    try {
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.TITLE, song.title)
+            put(MediaStore.MediaColumns.MIME_TYPE, "audio/mpeg")
+            put(MediaStore.Audio.Media.IS_RINGTONE, type == RingtoneManager.TYPE_RINGTONE)
+            put(MediaStore.Audio.Media.IS_ALARM, type == RingtoneManager.TYPE_ALARM)
+            put(MediaStore.Audio.Media.IS_MUSIC, false)
+        }
+        val uri = ContentUris.withAppendedId(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
+        )
+        contentResolver.update(uri, values, null, null)
+        RingtoneManager.setActualDefaultRingtoneUri(this, type, uri)
+        val label = if (type == RingtoneManager.TYPE_RINGTONE) "Ringtone" else "Alarm tone"
+        Toast.makeText(this, "Set as $label ✅", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(this, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+}
 
     private fun showRenameDialog(song: SongItem, position: Int) {
         val input = EditText(this).apply {
@@ -413,6 +427,17 @@ class MusicPlayerActivity : AppCompatActivity() {
                     pendingRenameSong = null
                     pendingRenamePosition = -1
                     pendingRenameName = ""
+                }
+                103 -> {
+    pendingRenameSong?.let { song ->
+        val type = if (pendingRenameName == "RINGTONE")
+            RingtoneManager.TYPE_RINGTONE
+        else
+            RingtoneManager.TYPE_ALARM
+        applyRingtone(song, type)
+    }
+    pendingRenameSong = null
+    pendingRenameName = ""
                 }
             }
         }
