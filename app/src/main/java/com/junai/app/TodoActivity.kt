@@ -11,6 +11,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONArray
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 
 class TodoActivity : AppCompatActivity() {
 
@@ -68,11 +70,23 @@ class TodoActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.clearAllButton).setOnClickListener {
+    if (todos.isEmpty()) {
+        Toast.makeText(this, "No tasks to clear!", Toast.LENGTH_SHORT).show()
+        return@setOnClickListener
+    }
+    AlertDialog.Builder(this)
+        .setTitle("Clear All Tasks")
+        .setMessage("Are you sure? All ${todos.size} tasks will be deleted!")
+        .setPositiveButton("Yes, Delete All") { _, _ ->
             val size = todos.size
             todos.clear()
             adapter.notifyItemRangeRemoved(0, size)
             updateCount()
             saveTodos()
+            Toast.makeText(this, "All tasks cleared!", Toast.LENGTH_SHORT).show()
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
         }
 
         updateCount()
