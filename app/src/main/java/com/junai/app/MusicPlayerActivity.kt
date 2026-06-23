@@ -1,12 +1,13 @@
 package com.junai.app
 
-import android.media.RingtoneManager
+import android.app.Activity
 import android.content.ComponentName
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -42,6 +43,13 @@ class MusicPlayerActivity : AppCompatActivity() {
 
     private var allSongs = listOf<SongItem>()
     private val MUSIC_PREFS = "music_prefs"
+
+    // Pending operations for Android 11+ permission requests
+    private var pendingDeleteSong: SongItem? = null
+    private var pendingDeletePosition: Int = -1
+    private var pendingRenameSong: SongItem? = null
+    private var pendingRenamePosition: Int = -1
+    private var pendingRenameName: String = ""
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -279,17 +287,17 @@ class MusicPlayerActivity : AppCompatActivity() {
         }
         try {
             val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DATA, song.path)
                 put(MediaStore.MediaColumns.TITLE, song.title)
                 put(MediaStore.MediaColumns.MIME_TYPE, "audio/mpeg")
                 put(MediaStore.Audio.Media.IS_RINGTONE, type == RingtoneManager.TYPE_RINGTONE)
                 put(MediaStore.Audio.Media.IS_ALARM, type == RingtoneManager.TYPE_ALARM)
                 put(MediaStore.Audio.Media.IS_MUSIC, false)
             }
-            val uri = MediaStore.Audio.Media.getContentUriForPath(song.path)!!
-            contentResolver.delete(uri, "${MediaStore.MediaColumns.DATA}=?", arrayOf(song.path))
-            val newUri = contentResolver.insert(uri, values)!!
-            RingtoneManager.setActualDefaultRingtoneUri(this, type, newUri)
+            val uri = ContentUris.withAppendedId(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
+            )
+            contentResolver.update(uri, values, null, null)
+            RingtoneManager.setActualDefaultRingtoneUri(this, type, uri)
             val label = if (type == RingtoneManager.TYPE_RINGTONE) "Ringtone" else "Alarm tone"
             Toast.makeText(this, "Set as $label ✅", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
@@ -309,19 +317,30 @@ class MusicPlayerActivity : AppCompatActivity() {
             .setPositiveButton("Rename") { _, _ ->
                 val newName = input.text.toString().trim()
                 if (newName.isEmpty()) return@setPositiveButton
-                try {
-                    val values = ContentValues().apply {
-                        put(MediaStore.Audio.Media.TITLE, newName)
-                    }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val uri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
                     )
-                    contentResolver.update(uri, values, null, null)
-                    allSongs = allSongs.toMutableList().also { it[position] = song.copy(title = newName) }
-                    songListRecycler.adapter?.notifyItemChanged(position)
-                    Toast.makeText(this, "Renamed ✅", Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Rename failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    pendingRenameSong = song
+                    pendingRenamePosition = position
+                    pendingRenameName = newName
+                    val pendingIntent = MediaStore.createWriteRequest(contentResolver, listOf(uri))
+                    startIntentSenderForResult(pendingIntent.intentSender, 102, null, 0, 0, 0)
+                } else {
+                    try {
+                        val values = ContentValues().apply {
+                            put(MediaStore.Audio.Media.TITLE, newName)
+                        }
+                        val uri = ContentUris.withAppendedId(
+                            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
+                        )
+                        contentResolver.update(uri, values, null, null)
+                        allSongs = allSongs.toMutableList().also { it[position] = song.copy(title = newName) }
+                        songListRecycler.adapter?.notifyItemChanged(position)
+                        Toast.makeText(this, "Renamed ✅", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this, "Rename failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -333,20 +352,70 @@ class MusicPlayerActivity : AppCompatActivity() {
             .setTitle("Delete Song")
             .setMessage("Delete \"${song.title}\" permanently?")
             .setPositiveButton("Delete") { _, _ ->
-                try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val uri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
                     )
-                    contentResolver.delete(uri, null, null)
-                    allSongs = allSongs.toMutableList().also { it.removeAt(position) }
-                    songListRecycler.adapter?.notifyItemRemoved(position)
-                    Toast.makeText(this, "Deleted 🗑️", Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Delete failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    pendingDeleteSong = song
+                    pendingDeletePosition = position
+                    val pendingIntent = MediaStore.createDeleteRequest(contentResolver, listOf(uri))
+                    startIntentSenderForResult(pendingIntent.intentSender, 101, null, 0, 0, 0)
+                } else {
+                    try {
+                        val uri = ContentUris.withAppendedId(
+                            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
+                        )
+                        contentResolver.delete(uri, null, null)
+                        allSongs = allSongs.toMutableList().also { it.removeAt(position) }
+                        songListRecycler.adapter?.notifyItemRemoved(position)
+                        Toast.makeText(this, "Deleted 🗑️", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this, "Delete failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK) {
+            when (requestCode) {
+                101 -> {
+                    pendingDeleteSong?.let {
+                        allSongs = allSongs.toMutableList().also { list -> list.removeAt(pendingDeletePosition) }
+                        songListRecycler.adapter?.notifyItemRemoved(pendingDeletePosition)
+                        Toast.makeText(this, "Deleted 🗑️", Toast.LENGTH_SHORT).show()
+                    }
+                    pendingDeleteSong = null
+                    pendingDeletePosition = -1
+                }
+                102 -> {
+                    pendingRenameSong?.let { song ->
+                        try {
+                            val values = ContentValues().apply {
+                                put(MediaStore.Audio.Media.TITLE, pendingRenameName)
+                            }
+                            val uri = ContentUris.withAppendedId(
+                                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.id
+                            )
+                            contentResolver.update(uri, values, null, null)
+                            allSongs = allSongs.toMutableList().also {
+                                it[pendingRenamePosition] = song.copy(title = pendingRenameName)
+                            }
+                            songListRecycler.adapter?.notifyItemChanged(pendingRenamePosition)
+                            Toast.makeText(this, "Renamed ✅", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(this, "Rename failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    pendingRenameSong = null
+                    pendingRenamePosition = -1
+                    pendingRenameName = ""
+                }
+            }
+        }
     }
 
     private fun ensureFavoritesPlaylist() {
