@@ -243,81 +243,377 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Drawer Menu -->
-    <ScrollView
-        android:layout_width="280dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="#111116">
+    <!-- DRAWER PANEL -->
+<ScrollView
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:layout_gravity="start"
+    android:background="#0A0A12"
+    android:scrollbarThumbVertical="@android:color/transparent">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="48dp"
+        android:paddingBottom="32dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <!-- Jun AI Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/crystal_glass_button"
+            android:padding="14dp"
+            android:layout_marginBottom="20dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🤖"
+                android:textSize="28sp"
+                android:layout_marginEnd="10dp"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jun AI"
+                    android:textColor="#FF1744"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:shadowColor="#FF1744"
+                    android:shadowDx="0"
+                    android:shadowDy="0"
+                    android:shadowRadius="8"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your AI Companion"
+                    android:textColor="#88FFFFFF"
+                    android:textSize="11sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- SETTINGS (standalone) -->
+        <LinearLayout
+            android:id="@+id/menuSettings"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/crystal_menu_item"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp">
+            <TextView
+                android:layout_width="32dp"
+                android:layout_height="wrap_content"
+                android:text="⚙️"
+                android:textSize="18sp"
+                android:gravity="center"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="10dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Settings"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="General app settings"
+                    android:textColor="#88FFFFFF"
+                    android:textSize="11sp"/>
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="›"
+                android:textColor="#FF1744"
+                android:textSize="20sp"/>
+        </LinearLayout>
+
+        <!-- CATEGORY: AI & ASSISTANT -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="32dp"
-            android:paddingBottom="24dp"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp">
+            android:background="@drawable/crystal_category_ai"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Menu"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:paddingBottom="4dp"/>
-
-            <View
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#2A2A35"
-                android:layout_marginBottom="16dp"/>
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="4dp"
+                android:paddingBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🤖"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="6dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AI &amp; ASSISTANT"
+                    android:textColor="#7B68EE"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1"/>
+            </LinearLayout>
 
-            <TextView android:id="@+id/menuSettings" android:layout_width="match_parent" android:layout_height="48dp" android:text="⚙️  Settings" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+            <LinearLayout
+                android:id="@+id/menuMiniJun"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/crystal_menu_item"
+                android:padding="10dp"
+                android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🤖" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Mini-Jun Settings" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Customize your Mini-Jun" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#7B68EE" android:textSize="18sp"/>
+            </LinearLayout>
 
-            <TextView android:id="@+id/menuMiniJun" android:layout_width="match_parent" android:layout_height="48dp" android:text="🤖  Mini-Jun Settings" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+            <LinearLayout
+                android:id="@+id/menuMemory"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/crystal_menu_item"
+                android:padding="10dp"
+                android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🧠" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Knowledge Memory" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stored knowledge &amp; facts" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#7B68EE" android:textSize="18sp"/>
+            </LinearLayout>
 
-            <TextView android:id="@+id/menuCalculator" android:layout_width="match_parent" android:layout_height="48dp" android:text="🔢  Calculator" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+            <LinearLayout
+                android:id="@+id/menuLearningCenter"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/crystal_menu_item"
+                android:padding="10dp"
+                android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🎓" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Learning Center" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Teach Jun new things" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#7B68EE" android:textSize="18sp"/>
+            </LinearLayout>
 
-            <TextView android:id="@+id/menuDraw" android:layout_width="match_parent" android:layout_height="48dp" android:text="🎨  Draw" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:id="@+id/menuNotes" android:layout_width="match_parent" android:layout_height="48dp" android:text="📝  Notes" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:id="@+id/menuTodo" android:layout_width="match_parent" android:layout_height="48dp" android:text="✅  To-do Lists" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="🧠  Memory" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:id="@+id/menuTranslator" android:layout_width="match_parent" android:layout_height="48dp" android:text="🌐  Translator" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:id="@+id/menuReminder" android:layout_width="match_parent" android:layout_height="48dp" android:text="⏰  Reminder" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:id="@+id/menuSongs" android:layout_width="match_parent" android:layout_height="48dp" android:text="🎵  Songs" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:id="@+id/menuNegative" android:layout_width="match_parent" android:layout_height="48dp" android:text="👎  Negative Response Answers" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="48dp" android:text="📊  Jun Performance" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-
-            <TextView android:id="@+id/menuVoiceCommands" android:layout_width="match_parent" android:layout_height="48dp" android:text="📖 Jun Manual" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-            <TextView android:id="@+id/menuDataManagement" android:layout_width="match_parent" android:layout_height="48dp" android:text="📊  Data Management" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
-            <TextView android:id="@+id/menuLearningCenter" android:layout_width="match_parent" android:layout_height="48dp" android:text="🧠  Learning Center" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center_vertical"/>
-            <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="#2A2A35"/>
+            <LinearLayout
+                android:id="@+id/menuNegative"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/crystal_menu_item"
+                android:padding="10dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="💬" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Response Filters" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Manage negative responses" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#7B68EE" android:textSize="18sp"/>
+            </LinearLayout>
 
         </LinearLayout>
-    </ScrollView>
 
+        <!-- CATEGORY: PRODUCTIVITY -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/crystal_category_productivity"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="4dp"
+                android:paddingBottom="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="✂️" android:textSize="14sp" android:layout_marginEnd="6dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PRODUCTIVITY" android:textColor="#4CAF50" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.1"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuNotes" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp" android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="📝" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Notes" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Write and manage notes" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#4CAF50" android:textSize="18sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuTodo" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp" android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="✅" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="To-Do Lists" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Plan and organize tasks" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#4CAF50" android:textSize="18sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuReminder" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp" android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="⏰" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Reminder" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Set reminders and alerts" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#4CAF50" android:textSize="18sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuTranslator" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🌐" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Translator" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Translate any language" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#4CAF50" android:textSize="18sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- CATEGORY: TOOLS -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/crystal_category_tools"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="4dp" android:paddingBottom="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎨" android:textSize="14sp" android:layout_marginEnd="6dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TOOLS" android:textColor="#FF6D00" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.1"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuCalculator" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp" android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🔢" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Calculator" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Basic calculations" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#FF6D00" android:textSize="18sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuDraw" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp" android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🎨" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sketch Pad" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Draw and sketch anything" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#FF6D00" android:textSize="18sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuSongs" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🎵" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Music Player" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Play your favorite songs" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#FF6D00" android:textSize="18sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- CATEGORY: SYSTEM -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/crystal_category_system"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="4dp" android:paddingBottom="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🛡️" android:textSize="14sp" android:layout_marginEnd="6dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SYSTEM" android:textColor="#1565C0" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.1"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuPermissionCentre" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp" android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="🛡️" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Permission Centre" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Manage app permissions" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#1565C0" android:textSize="18sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuPerformance" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp" android:layout_marginBottom="6dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="📊" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System Status" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Check Jun's performance" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#1565C0" android:textSize="18sp"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuDataManagement" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="💾" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Backup &amp; Data" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Backup, restore &amp; manage data" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#1565C0" android:textSize="18sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- CATEGORY: HELP -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/crystal_category_help"
+            android:padding="10dp"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="4dp" android:paddingBottom="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📖" android:textSize="14sp" android:layout_marginEnd="6dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="HELP" android:textColor="#FF9800" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.1"/>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/menuVoiceCommands" android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/crystal_menu_item" android:padding="10dp">
+                <TextView android:layout_width="28dp" android:layout_height="wrap_content" android:text="📖" android:textSize="16sp" android:gravity="center"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Jun Manual" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="How to use Jun AI" android:textColor="#88FFFFFF" android:textSize="10sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textColor="#FF9800" android:textSize="18sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
 </androidx.drawerlayout.widget.DrawerLayout>
