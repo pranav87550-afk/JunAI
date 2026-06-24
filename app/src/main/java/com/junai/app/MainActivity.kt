@@ -88,58 +88,70 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         }
 
-        findViewById<TextView>(R.id.menuSettings).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuMiniJun).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, MiniJunSettingsActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuCalculator).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, CalculatorActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuNotes).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, NotesActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuTodo).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, TodoActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuDraw).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, DrawActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuTranslator).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, TranslatorActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuReminder).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, ReminderActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuSongs).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, MusicHomeActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuNegative).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, NegativeResponsesActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuVoiceCommands).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, VoiceCommandsActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuDataManagement).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, DataManagementActivity::class.java))
-        }
-        findViewById<TextView>(R.id.menuLearningCenter).setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, LearningCenterActivity::class.java))
-        }
+findViewById<LinearLayout>(R.id.menuSettings).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, SettingsActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuMiniJun).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, MiniJunSettingsActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuMemory).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, UnansweredActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuLearningCenter).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, LearningCenterActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuNegative).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, NegativeResponsesActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuNotes).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, NotesActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuTodo).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, TodoActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuReminder).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, ReminderActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuTranslator).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, TranslatorActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuCalculator).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, CalculatorActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuDraw).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, DrawActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuSongs).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, MusicHomeActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuPermissionCentre).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, PermissionCentreActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuPerformance).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, DataManagementActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuDataManagement).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, DataManagementActivity::class.java))
+}
+findViewById<LinearLayout>(R.id.menuVoiceCommands).setOnClickListener {
+    drawerLayout.closeDrawer(GravityCompat.START)
+    startActivity(Intent(this, VoiceCommandsActivity::class.java))
+}
 
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         chatAdapter = ChatAdapter(messages, object : ChatActionListener {
