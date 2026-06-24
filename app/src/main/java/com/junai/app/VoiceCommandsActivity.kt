@@ -176,7 +176,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
         })
         parent.addView(row)
         parent.addView(android.view.View(this).apply {
-            setBackgroundColor(Color.parseColor(color + "33").let { Color.parseColor(color.replace("#FF", "#33").replace("#00", "#11")) })
+            setBackgroundColor(Color.parseColor("#33FF1744"))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 1
             ).also { it.setMargins(0, 0, 0, 8) }
