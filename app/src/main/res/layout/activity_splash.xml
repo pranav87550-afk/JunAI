@@ -32,14 +32,12 @@
         android:textSize="13sp"
         android:letterSpacing="0.15"/>
 
-    <TextView
+    <com.junai.app.WaveTextView
         android:id="@+id/loadingStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="40dp"
-        android:text="Loading Jun AI..."
-        android:textColor="#888888"
-        android:textSize="13sp"/>
+        android:layout_centerHorizontal="true"
+        android:layout_above="@id/progressBar"
+        android:layout_marginBottom="14dp"/>
 
 </RelativeLayout>
