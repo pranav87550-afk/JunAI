@@ -214,7 +214,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
             setTextColor(Color.parseColor("#CCCCCC"))
             textSize = 12f
             setPadding(0, 6, 0, 0)
-            lineSpacingMultiplier = 1.4f
+            setLineSpacing(0f, 1.4f)
         })
         parent.addView(card)
     }
@@ -240,7 +240,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
             setTextColor(Color.parseColor("#AAAAAA"))
             textSize = 12f
             setPadding(0, 4, 0, 0)
-            lineSpacingMultiplier = 1.4f
+            setLineSpacing(0f, 1.4f)
         })
         parent.addView(card)
     }
@@ -252,7 +252,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
             textSize = 12f
             background = getD(R.drawable.crystal_menu_item)
             setPadding(16, 14, 16, 14)
-            lineSpacingMultiplier = 1.5f
+            setLineSpacing(0f, 1.5f)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
