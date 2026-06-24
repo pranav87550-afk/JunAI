@@ -31,6 +31,10 @@ class ChatAdapter(
     private val actionListener: ChatActionListener? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    // Fired whenever a Jun (bot) reply is added — lets MainActivity know
+    // it's safe to re-enable the send button.
+    var onBotMessageAdded: (() -> Unit)? = null
+
     companion object {
         const val TYPE_USER = 1
         const val TYPE_JUN = 2
@@ -118,6 +122,10 @@ class ChatAdapter(
         }
         messages.add(message)
         notifyItemInserted(messages.size - 1)
+
+        if (!message.isUser) {
+            onBotMessageAdded?.invoke()
+        }
     }
 
     fun updateMessages(newMessages: List<ChatMessage>) {
