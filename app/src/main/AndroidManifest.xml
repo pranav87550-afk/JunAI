@@ -73,6 +73,7 @@
         <activity android:name=".LearningCenterActivity" android:exported="false"/>
         <activity android:name=".NegativeResponsesActivity" android:exported="false"/>
         <activity android:name=".VoiceCommandsActivity" android:exported="false"/>
+        <activity android:name=".PermissionCentreActivity" android:exported="false"/>
         <activity android:name=".DataManagementActivity" android:exported="false"/>
 
         <receiver android:name=".AlarmReceiver" android:exported="true"/>
