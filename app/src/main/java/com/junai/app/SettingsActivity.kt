@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
+import android.view.View
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Switch
@@ -70,7 +71,7 @@ class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
 
         // Preview Voice
-        findViewById<Button>(R.id.btnPreviewVoice).setOnClickListener {
+        findViewById<View>(R.id.btnPreviewVoice).setOnClickListener {
             if (ttsReady) {
                 tts.speak("Hello! I am Jun, your AI assistant.", TextToSpeech.QUEUE_FLUSH, null, "PREVIEW")
             } else {
@@ -79,7 +80,7 @@ class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
     // Clear chat
-        findViewById<Button>(R.id.btnClearChat).setOnClickListener {
+        findViewById<View>(R.id.btnClearChat).setOnClickListener {
             AlertDialog.Builder(this, R.style.DarkDialog)
                 .setTitle("Clear Chat")
                 .setMessage("Are you sure? All chat history will be deleted!")
@@ -96,30 +97,30 @@ class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         // Export chat
-        findViewById<Button>(R.id.btnExportChat).setOnClickListener {
+        findViewById<View>(R.id.btnExportChat).setOnClickListener {
             Toast.makeText(this, "Export coming soon!", Toast.LENGTH_SHORT).show()
         }
 
         // Clear notes
-        findViewById<Button>(R.id.btnClearNotes).setOnClickListener {
+        findViewById<View>(R.id.btnClearNotes).setOnClickListener {
             getSharedPreferences("notes_prefs", MODE_PRIVATE).edit().clear().apply()
             Toast.makeText(this, "Notes cleared!", Toast.LENGTH_SHORT).show()
         }
 
         // Clear todo
-        findViewById<Button>(R.id.btnClearTodo).setOnClickListener {
+        findViewById<View>(R.id.btnClearTodo).setOnClickListener {
             getSharedPreferences("todo_prefs", MODE_PRIVATE).edit().clear().apply()
             Toast.makeText(this, "To-do lists cleared!", Toast.LENGTH_SHORT).show()
         }
 
         // Clear reminders
-        findViewById<Button>(R.id.btnClearReminder).setOnClickListener {
+        findViewById<View>(R.id.btnClearReminder).setOnClickListener {
             clearAllReminders()
             Toast.makeText(this, "Reminders cleared!", Toast.LENGTH_SHORT).show()
         }
 
         // Factory reset
-        findViewById<Button>(R.id.btnFactoryReset).setOnClickListener {
+        findViewById<View>(R.id.btnFactoryReset).setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Factory Reset")
                 .setMessage("Are you sure? All data will be deleted!")
@@ -129,7 +130,7 @@ class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         // Save changes
-        findViewById<Button>(R.id.btnSaveChanges).setOnClickListener {
+        findViewById<View>(R.id.btnSaveChanges).setOnClickListener {
             Toast.makeText(this, "Changes saved!", Toast.LENGTH_SHORT).show()
             finish()
         }
