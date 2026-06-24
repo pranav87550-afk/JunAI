@@ -4,6 +4,8 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -24,9 +26,12 @@ class SplashActivity : AppCompatActivity() {
     private lateinit var splashLogo: ImageView
     private lateinit var progressBar: CodeStreamProgressView
     private lateinit var progressText: TextView
-    private lateinit var loadingStatus: TextView
+    private lateinit var loadingStatus: WaveTextView
     private val handler = Handler(Looper.getMainLooper())
     private var pulseAnimator: AnimatorSet? = null
+
+    private var soundPool: SoundPool? = null
+    private var swipeSoundId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +42,9 @@ class SplashActivity : AppCompatActivity() {
         progressText = findViewById(R.id.progressText)
         loadingStatus = findViewById(R.id.loadingStatus)
 
-        // Hide bottom UI until entrance animation finishes — avoids a "dumped on screen" feel
+        initSwipeSound()
+
+        // Hide bottom UI until entrance animation finishes
         progressBar.alpha = 0f
         progressText.alpha = 0f
         loadingStatus.alpha = 0f
@@ -45,7 +52,19 @@ class SplashActivity : AppCompatActivity() {
         playEntranceAnimation()
     }
 
-    /** Logo fades + scales in with a slight overshoot — feels premium, not abrupt. */
+    private fun initSwipeSound() {
+        val attrs = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        soundPool = SoundPool.Builder()
+            .setMaxStreams(1)
+            .setAudioAttributes(attrs)
+            .build()
+        swipeSoundId = soundPool!!.load(this, R.raw.swipe_sound, 1)
+    }
+
+    /** Logo fades + scales in with a slight overshoot. */
     private fun playEntranceAnimation() {
         splashLogo.alpha = 0f
         splashLogo.scaleX = 0.82f
@@ -81,7 +100,7 @@ class SplashActivity : AppCompatActivity() {
         }
     }
 
-    /** Subtle continuous breathing glow on the logo while loading — keeps screen feeling "alive". */
+    /** Subtle breathing glow on the logo while loading. */
     private fun startLogoPulse() {
         val pulseUp = ObjectAnimator.ofFloat(splashLogo, View.SCALE_X, 1f, 1.035f)
         val pulseUpY = ObjectAnimator.ofFloat(splashLogo, View.SCALE_Y, 1f, 1.035f)
@@ -112,31 +131,15 @@ class SplashActivity : AppCompatActivity() {
         val isFirstLaunch = prefs.getBoolean("knowledge_imported", false).not()
 
         if (isFirstLaunch) {
-            typewriterText("Setting up Jun Brain... 🧠")
+            loadingStatus.setWaveText("Setting up Jun Brain... 🧠")
             importDefaultKnowledge {
                 prefs.edit().putBoolean("knowledge_imported", true).apply()
                 startLoading()
             }
         } else {
-            typewriterText("Loading Jun AI... 🚀")
+            loadingStatus.setWaveText("Loading Jun AI... 🚀")
             startLoading()
         }
-    }
-
-    /** Types text out character by character instead of slamming it in — small detail, big "premium" feel. */
-    private fun typewriterText(full: String) {
-        loadingStatus.text = ""
-        var index = 0
-        val typer = object : Runnable {
-            override fun run() {
-                if (index <= full.length) {
-                    loadingStatus.text = full.substring(0, index)
-                    index++
-                    handler.postDelayed(this, 22)
-                }
-            }
-        }
-        handler.post(typer)
     }
 
     private fun importDefaultKnowledge(onComplete: () -> Unit) {
@@ -165,17 +168,17 @@ class SplashActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         progressBar.progress = prog
                         progressText.text = "$prog%"
-                        loadingStatus.text = "Loading knowledge... (${i + 1}/$total) 🧠"
+                        loadingStatus.setWaveText("Loading knowledge... (${i + 1}/$total) 🧠")
                     }
                 }
 
                 withContext(Dispatchers.Main) {
-                    loadingStatus.text = "Jun is ready! 🚀"
+                    loadingStatus.setWaveText("Jun is ready! 🚀")
                     onComplete()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    loadingStatus.text = "Loading Jun AI... 🚀"
+                    loadingStatus.setWaveText("Loading Jun AI... 🚀")
                     onComplete()
                 }
             }
@@ -192,23 +195,28 @@ class SplashActivity : AppCompatActivity() {
                 if (progress < 100) {
                     handler.postDelayed(this, 40)
                 } else {
-                    goToMainActivity()
+                    // Show the fully-loaded splash for a beat before swiping away
+                    loadingStatus.setWaveText("Jun is ready! 🚀")
+                    handler.postDelayed({ goToMainActivity() }, 550)
                 }
             }
         }, 40)
     }
 
-    /** Smooth crossfade instead of an abrupt screen swap. */
+    /** Plays the swipe sound and slides the whole splash screen up to reveal MainActivity. */
     private fun goToMainActivity() {
         pulseAnimator?.cancel()
+        soundPool?.play(swipeSoundId, 0.8f, 0.8f, 1, 0, 1f)
         startActivity(Intent(this, MainActivity::class.java))
-        overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+        overridePendingTransition(R.anim.slide_up_enter, R.anim.slide_up_exit)
         finish()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         pulseAnimator?.cancel()
+        soundPool?.release()
+        soundPool = null
         handler.removeCallbacksAndMessages(null)
     }
 }
