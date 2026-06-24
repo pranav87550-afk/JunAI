@@ -1,10 +1,15 @@
 package com.junai.app
 
+import android.animation.Animator
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.widget.ProgressBar
+import android.view.View
+import android.view.animation.OvershootInterpolator
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
@@ -16,20 +21,90 @@ import org.json.JSONObject
 class SplashActivity : AppCompatActivity() {
 
     private var progress = 0
-    private lateinit var progressBar: ProgressBar
+    private lateinit var splashLogo: ImageView
+    private lateinit var progressBar: CodeStreamProgressView
     private lateinit var progressText: TextView
     private lateinit var loadingStatus: TextView
     private val handler = Handler(Looper.getMainLooper())
+    private var pulseAnimator: AnimatorSet? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
+        splashLogo = findViewById(R.id.splashLogo)
         progressBar = findViewById(R.id.progressBar)
         progressText = findViewById(R.id.progressText)
         loadingStatus = findViewById(R.id.loadingStatus)
 
-        checkFirstLaunch()
+        // Hide bottom UI until entrance animation finishes — avoids a "dumped on screen" feel
+        progressBar.alpha = 0f
+        progressText.alpha = 0f
+        loadingStatus.alpha = 0f
+
+        playEntranceAnimation()
+    }
+
+    /** Logo fades + scales in with a slight overshoot — feels premium, not abrupt. */
+    private fun playEntranceAnimation() {
+        splashLogo.alpha = 0f
+        splashLogo.scaleX = 0.82f
+        splashLogo.scaleY = 0.82f
+
+        val fade = ObjectAnimator.ofFloat(splashLogo, View.ALPHA, 0f, 1f).apply { duration = 650 }
+        val scaleX = ObjectAnimator.ofFloat(splashLogo, View.SCALE_X, 0.82f, 1f).apply { duration = 650 }
+        val scaleY = ObjectAnimator.ofFloat(splashLogo, View.SCALE_Y, 0.82f, 1f).apply { duration = 650 }
+
+        AnimatorSet().apply {
+            playTogether(fade, scaleX, scaleY)
+            interpolator = OvershootInterpolator(1.1f)
+            addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animation: Animator) {}
+                override fun onAnimationCancel(animation: Animator) {}
+                override fun onAnimationRepeat(animation: Animator) {}
+                override fun onAnimationEnd(animation: Animator) {
+                    fadeInBottomUi()
+                    startLogoPulse()
+                    checkFirstLaunch()
+                }
+            })
+            start()
+        }
+    }
+
+    private fun fadeInBottomUi() {
+        listOf(progressBar, progressText, loadingStatus).forEach {
+            ObjectAnimator.ofFloat(it, View.ALPHA, 0f, 1f).apply {
+                duration = 350
+                start()
+            }
+        }
+    }
+
+    /** Subtle continuous breathing glow on the logo while loading — keeps screen feeling "alive". */
+    private fun startLogoPulse() {
+        val pulseUp = ObjectAnimator.ofFloat(splashLogo, View.SCALE_X, 1f, 1.035f)
+        val pulseUpY = ObjectAnimator.ofFloat(splashLogo, View.SCALE_Y, 1f, 1.035f)
+        val pulseDown = ObjectAnimator.ofFloat(splashLogo, View.SCALE_X, 1.035f, 1f)
+        val pulseDownY = ObjectAnimator.ofFloat(splashLogo, View.SCALE_Y, 1.035f, 1f)
+
+        listOf(pulseUp, pulseUpY, pulseDown, pulseDownY).forEach { it.duration = 1100 }
+
+        pulseAnimator = AnimatorSet().apply {
+            playSequentially(
+                AnimatorSet().apply { playTogether(pulseUp, pulseUpY) },
+                AnimatorSet().apply { playTogether(pulseDown, pulseDownY) }
+            )
+            addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animation: Animator) {}
+                override fun onAnimationCancel(animation: Animator) {}
+                override fun onAnimationRepeat(animation: Animator) {}
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!isFinishing) startLogoPulse()
+                }
+            })
+            start()
+        }
     }
 
     private fun checkFirstLaunch() {
@@ -37,15 +112,31 @@ class SplashActivity : AppCompatActivity() {
         val isFirstLaunch = prefs.getBoolean("knowledge_imported", false).not()
 
         if (isFirstLaunch) {
-            loadingStatus.text = "Setting up Jun Brain... 🧠"
+            typewriterText("Setting up Jun Brain... 🧠")
             importDefaultKnowledge {
                 prefs.edit().putBoolean("knowledge_imported", true).apply()
                 startLoading()
             }
         } else {
-            loadingStatus.text = "Loading Jun AI... 🚀"
+            typewriterText("Loading Jun AI... 🚀")
             startLoading()
         }
+    }
+
+    /** Types text out character by character instead of slamming it in — small detail, big "premium" feel. */
+    private fun typewriterText(full: String) {
+        loadingStatus.text = ""
+        var index = 0
+        val typer = object : Runnable {
+            override fun run() {
+                if (index <= full.length) {
+                    loadingStatus.text = full.substring(0, index)
+                    index++
+                    handler.postDelayed(this, 22)
+                }
+            }
+        }
+        handler.post(typer)
     }
 
     private fun importDefaultKnowledge(onComplete: () -> Unit) {
@@ -74,7 +165,7 @@ class SplashActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         progressBar.progress = prog
                         progressText.text = "$prog%"
-                        loadingStatus.text = "Loading knowledge... (${ i + 1}/$total) 🧠"
+                        loadingStatus.text = "Loading knowledge... (${i + 1}/$total) 🧠"
                     }
                 }
 
@@ -101,15 +192,23 @@ class SplashActivity : AppCompatActivity() {
                 if (progress < 100) {
                     handler.postDelayed(this, 40)
                 } else {
-                    startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-                    finish()
+                    goToMainActivity()
                 }
             }
         }, 40)
     }
 
+    /** Smooth crossfade instead of an abrupt screen swap. */
+    private fun goToMainActivity() {
+        pulseAnimator?.cancel()
+        startActivity(Intent(this, MainActivity::class.java))
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+        finish()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        pulseAnimator?.cancel()
         handler.removeCallbacksAndMessages(null)
     }
 }
