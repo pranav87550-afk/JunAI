@@ -50,6 +50,11 @@ class MiniJunSettingsActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
 
+        findViewById<Button>(R.id.saveButton).setOnClickListener {
+    Toast.makeText(this, "Settings saved! ✅", Toast.LENGTH_SHORT).show()
+    finish()
+        }
+
         // ── Mini Jun ON/OFF ───────────────────────────────────
         miniJunSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateSwitchColor(miniJunSwitch, isChecked)
