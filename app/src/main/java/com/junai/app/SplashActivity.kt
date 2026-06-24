@@ -208,7 +208,7 @@ class SplashActivity : AppCompatActivity() {
         pulseAnimator?.cancel()
         soundPool?.play(swipeSoundId, 0.8f, 0.8f, 1, 0, 1f)
         startActivity(Intent(this, MainActivity::class.java))
-        overridePendingTransition(R.anim.slide_up_enter, R.anim.slide_up_exit)
+        overridePendingTransition(R.anim.splash_slide_up_enter, R.anim.slide_up_exit)
         finish()
     }
 
