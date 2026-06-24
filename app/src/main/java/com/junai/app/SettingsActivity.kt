@@ -112,22 +112,10 @@ class SettingsActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             Toast.makeText(this, "To-do lists cleared!", Toast.LENGTH_SHORT).show()
         }
 
-        // Clear memory
-        findViewById<Button>(R.id.btnClearMemory).setOnClickListener {
-            getSharedPreferences("memory_prefs", MODE_PRIVATE).edit().clear().apply()
-            Toast.makeText(this, "Memory cleared!", Toast.LENGTH_SHORT).show()
-        }
-
         // Clear reminders
         findViewById<Button>(R.id.btnClearReminder).setOnClickListener {
             clearAllReminders()
             Toast.makeText(this, "Reminders cleared!", Toast.LENGTH_SHORT).show()
-        }
-
-        // Clear unanswered
-        findViewById<Button>(R.id.btnClearUnanswered).setOnClickListener {
-            getSharedPreferences("unanswered_prefs", MODE_PRIVATE).edit().clear().apply()
-            Toast.makeText(this, "Unanswered questions cleared!", Toast.LENGTH_SHORT).show()
         }
 
         // Factory reset
