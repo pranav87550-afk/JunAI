@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#050508">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="16dp"
+        android:background="#0A0A12">
+
+        <LinearLayout
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/crystal_glass_button"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Back"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Permission Centre"
+            android:textColor="#1565C0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:shadowColor="#1565C0"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="10"/>
+
+        <View android:layout_width="70dp" android:layout_height="1dp"/>
+
+    </LinearLayout>
+
+    <!-- Neon Divider -->
+    <View android:layout_width="match_parent" android:layout_height="1.5dp" android:background="#1565C0"/>
+    <View android:layout_width="match_parent" android:layout_height="4dp" android:background="#221565C0"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/permissionsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"/>
+
+    </ScrollView>
+
+</LinearLayout>
