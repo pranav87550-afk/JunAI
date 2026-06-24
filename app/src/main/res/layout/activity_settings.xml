@@ -117,8 +117,8 @@
                     android:textOn="On"
                     android:textOff="Off"
                     android:textColor="#FFFFFF"
-                    android:thumbTint="#E53935"
-                    android:trackTint="#4A1010"/>
+                    android:thumbTint="@color/voice_switch_thumb_tint"
+                    android:trackTint="@color/voice_switch_track_tint"/>
 
             </LinearLayout>
 
@@ -236,28 +236,10 @@
                 android:layout_marginBottom="8dp"/>
 
             <Button
-                android:id="@+id/btnClearMemory"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="Clear all Memory"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/settings_button"
-                android:layout_marginBottom="8dp"/>
-
-            <Button
                 android:id="@+id/btnClearReminder"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:text="Clear all Reminder"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/settings_button"
-                android:layout_marginBottom="8dp"/>
-
-            <Button
-                android:id="@+id/btnClearUnanswered"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="Clear all unanswered questions"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/settings_button"
                 android:layout_marginBottom="16dp"/>
