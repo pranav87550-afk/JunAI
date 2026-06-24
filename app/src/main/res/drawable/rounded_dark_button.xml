@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#1E1E26"/>
-    <corners android:radius="12dp"/>
-</shape>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Pressed state: button turns solid red while finger is on it -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#E53935"/>
+            <corners android:radius="12dp"/>
+        </shape>
+    </item>
+
+    <!-- Default state: dark fill + thin red outline -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#1E1E26"/>
+            <stroke
+                android:width="1.2dp"
+                android:color="#FF1744"/>
+            <corners android:radius="12dp"/>
+        </shape>
+    </item>
+
+</selector>
