@@ -179,7 +179,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
     private fun addHeader(parent: LinearLayout, title: String, subtitle: String, info: String) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = getDrawable(R.drawable.crystal_album_art)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.crystal_album_art)
             setPadding(24, 24, 24, 24)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -248,7 +248,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
     private fun addFeatureCard(parent: LinearLayout, emoji: String, title: String, accentColor: String, description: String) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = getDrawable(R.drawable.crystal_song_item)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.crystal_song_item)
             setPadding(16, 14, 16, 14)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -285,7 +285,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
     private fun addCommandCard(parent: LinearLayout, command: String, description: String, accentColor: String) {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = getDrawable(R.drawable.crystal_menu_item)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.crystal_menu_item)
             setPadding(16, 12, 16, 12)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -314,7 +314,7 @@ class VoiceCommandsActivity : AppCompatActivity() {
             this.text = text
             setTextColor(Color.parseColor("#AAAAAA"))
             textSize = 12f
-            background = getDrawable(R.drawable.crystal_menu_item)
+            background = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.crystal_menu_item)
             setPadding(16, 14, 16, 14)
             lineSpacingMultiplier = 1.5f
             layoutParams = LinearLayout.LayoutParams(
