@@ -5,37 +5,38 @@
     android:viewportWidth="48"
     android:viewportHeight="48">
 
-    <!-- Crystal outer ring -->
     <path
-        android:fillColor="#33FF4444"
-        android:pathData="M24,2 C11.85,2 2,11.85 2,24 C2,36.15 11.85,46 24,46 C36.15,46 46,36.15 46,24 C46,11.85 36.15,2 24,2 Z"/>
+        android:fillColor="#1AE53935"
+        android:pathData="M24,1 C11.85,1 1,11.85 1,24 C1,36.15 11.85,47 24,47 C36.15,47 47,36.15 47,24 C47,11.85 36.15,1 24,1 Z"/>
 
-    <!-- Crystal inner glow ring -->
+    <path
+        android:fillColor="#33E53935"
+        android:pathData="M24,4 C13.51,4 4,13.51 4,24 C4,34.49 13.51,44 24,44 C34.49,44 44,34.49 44,24 C44,13.51 34.49,4 24,4 Z"/>
+
+    <path
+        android:fillColor="#0A0A0F"
+        android:pathData="M24,7 C15.16,7 7,15.16 7,24 C7,32.84 15.16,41 24,41 C32.84,41 41,32.84 41,24 C41,15.16 32.84,7 24,7 Z"/>
+
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#FFFF4444"
-        android:strokeWidth="1.5"
-        android:pathData="M24,5 C13.51,5 5,13.51 5,24 C5,34.49 13.51,43 24,43 C34.49,43 43,34.49 43,24 C43,13.51 34.49,5 24,5 Z"/>
+        android:strokeColor="#FFE53935"
+        android:strokeWidth="2"
+        android:pathData="M24,7 C15.16,7 7,15.16 7,24 C7,32.84 15.16,41 24,41 C32.84,41 41,32.84 41,24 C41,15.16 32.84,7 24,7 Z"/>
 
-    <!-- Chat bubble -->
+    <!-- Chat bubble (white) -->
     <path
-        android:fillColor="#FFFF6666"
-        android:pathData="M12,14 C12,12.9 12.9,12 14,12 L34,12 C35.1,12 36,12.9 36,14 L36,28 C36,29.1 35.1,30 34,30 L18,30 L12,36 L12,14 Z"/>
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M14,15 C14,13.9 14.9,13 16,13 L32,13 C33.1,13 34,13.9 34,15 L34,26 C34,27.1 33.1,28 32,28 L19,28 L14,33 L14,15 Z"/>
 
-    <!-- Chat dots -->
+    <!-- Dots (dark, cut into bubble) -->
     <path
         android:fillColor="#FF0A0A0F"
-        android:pathData="M18,21 C18,22.1 17.1,23 16,23 C14.9,23 14,22.1 14,21 C14,19.9 14.9,19 16,19 C17.1,19 18,19.9 18,21 Z"/>
+        android:pathData="M19.5,20.5 C19.5,21.6 18.6,22.5 17.5,22.5 C16.4,22.5 15.5,21.6 15.5,20.5 C15.5,19.4 16.4,18.5 17.5,18.5 C18.6,18.5 19.5,19.4 19.5,20.5 Z"/>
     <path
         android:fillColor="#FF0A0A0F"
-        android:pathData="M25,21 C25,22.1 24.1,23 23,23 C21.9,23 21,22.1 21,21 C21,19.9 21.9,19 23,19 C24.1,19 25,19.9 25,21 Z"/>
+        android:pathData="M26,20.5 C26,21.6 25.1,22.5 24,22.5 C22.9,22.5 22,21.6 22,20.5 C22,19.4 22.9,18.5 24,18.5 C25.1,18.5 26,19.4 26,20.5 Z"/>
     <path
         android:fillColor="#FF0A0A0F"
-        android:pathData="M32,21 C32,22.1 31.1,23 30,23 C28.9,23 28,22.1 28,21 C28,19.9 28.9,19 30,19 C31.1,19 32,19.9 32,21 Z"/>
-
-    <!-- Crystal shine -->
-    <path
-        android:fillColor="#55FFFFFF"
-        android:pathData="M10,10 C12,7 17,6 20,8 C16,8 12,10 10,14 C9,12 9,11 10,10 Z"/>
+        android:pathData="M32.5,20.5 C32.5,21.6 31.6,22.5 30.5,22.5 C29.4,22.5 28.5,21.6 28.5,20.5 C28.5,19.4 29.4,18.5 30.5,18.5 C31.6,18.5 32.5,19.4 32.5,20.5 Z"/>
 
 </vector>
