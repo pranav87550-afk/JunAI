@@ -27,7 +27,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.animation.ObjectAnimator
 import android.graphics.drawable.GradientDrawable
 import android.net.ConnectivityManager
 import android.net.Network
