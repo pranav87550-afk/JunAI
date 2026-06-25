@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <path
+        android:fillColor="#1AE53935"
+        android:pathData="M24,1 C11.85,1 1,11.85 1,24 C1,36.15 11.85,47 24,47 C36.15,47 47,36.15 47,24 C47,11.85 36.15,1 24,1 Z"/>
+
+    <path
+        android:fillColor="#33E53935"
+        android:pathData="M24,4 C13.51,4 4,13.51 4,24 C4,34.49 13.51,44 24,44 C34.49,44 44,34.49 44,24 C44,13.51 34.49,4 24,4 Z"/>
+
+    <path
+        android:fillColor="#0A0A0F"
+        android:pathData="M24,7 C15.16,7 7,15.16 7,24 C7,32.84 15.16,41 24,41 C32.84,41 41,32.84 41,24 C41,15.16 32.84,7 24,7 Z"/>
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFE53935"
+        android:strokeWidth="2"
+        android:pathData="M24,7 C15.16,7 7,15.16 7,24 C7,32.84 15.16,41 24,41 C32.84,41 41,32.84 41,24 C41,15.16 32.84,7 24,7 Z"/>
+
+    <!-- Question mark curve (white) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M19,18 C19,14.5 21.5,13 24,13 C26.76,13 29,15.24 29,18 C29,21 26,21.5 24.5,23.5 C24,24.3 24,25.5 24,26.5"/>
+
+    <!-- Dot -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M26,32 C26,33.1 25.1,34 24,34 C22.9,34 22,33.1 22,32 C22,30.9 22.9,30 24,30 C25.1,30 26,30.9 26,32 Z"/>
+
+</vector>
