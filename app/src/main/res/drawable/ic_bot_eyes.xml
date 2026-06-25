@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <path
+        android:fillColor="#1AE53935"
+        android:pathData="M24,1 C11.85,1 1,11.85 1,24 C1,36.15 11.85,47 24,47 C36.15,47 47,36.15 47,24 C47,11.85 36.15,1 24,1 Z"/>
+
+    <path
+        android:fillColor="#33E53935"
+        android:pathData="M24,4 C13.51,4 4,13.51 4,24 C4,34.49 13.51,44 24,44 C34.49,44 44,34.49 44,24 C44,13.51 34.49,4 24,4 Z"/>
+
+    <path
+        android:fillColor="#0A0A0F"
+        android:pathData="M24,7 C15.16,7 7,15.16 7,24 C7,32.84 15.16,41 24,41 C32.84,41 41,32.84 41,24 C41,15.16 32.84,7 24,7 Z"/>
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFE53935"
+        android:strokeWidth="2"
+        android:pathData="M24,7 C15.16,7 7,15.16 7,24 C7,32.84 15.16,41 24,41 C32.84,41 41,32.84 41,24 C41,15.16 32.84,7 24,7 Z"/>
+
+    <!-- Left eye ring (white) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.6"
+        android:pathData="M19,24 C19,26.21 17.21,28 15,28 C12.79,28 11,26.21 11,24 C11,21.79 12.79,20 15,20 C17.21,20 19,21.79 19,24 Z"/>
+
+    <!-- Right eye ring (white) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.6"
+        android:pathData="M37,24 C37,26.21 35.21,28 33,28 C30.79,28 29,26.21 29,24 C29,21.79 30.79,20 33,20 C35.21,20 37,21.79 37,24 Z"/>
+
+</vector>
