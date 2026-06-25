@@ -4,44 +4,86 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp">
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp">
 
+    <!-- Red accent bar -->
+    <View
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:background="#E53935"/>
+
+    <!-- Card body -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/note_card_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp">
 
-        <TextView
-            android:id="@+id/noteTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"/>
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_note_doc"
+            android:layout_marginEnd="12dp"
+            android:contentDescription="Note"/>
 
-        <TextView
-            android:id="@+id/noteDate"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textColor="#888888"
-            android:textSize="13sp"
-            android:paddingTop="2dp"/>
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/noteTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="4dp">
+
+                <ImageView
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:src="@drawable/ic_calendar"
+                    android:layout_marginEnd="5dp"
+                    android:contentDescription="Date"/>
+
+                <TextView
+                    android:id="@+id/noteDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#888888"
+                    android:textSize="13sp"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/deleteNoteButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/icon_badge_red_border"
+            android:src="@drawable/ic_delete"
+            android:tint="#E53935"
+            android:padding="9dp"
+            android:contentDescription="Delete"/>
 
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/deleteNoteButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/rounded_dark_button"
-        android:src="@drawable/ic_delete"
-        android:padding="8dp"
-        android:contentDescription="Delete"/>
-
-    <!-- Divider -->
 </LinearLayout>
