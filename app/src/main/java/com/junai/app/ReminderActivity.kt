@@ -1,7 +1,6 @@
 package com.junai.app
 
 import android.app.AlarmManager
-import android.provider.Settings
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -24,14 +23,146 @@ class ReminderActivity : AppCompatActivity() {
     private val PREFS = "reminders"
     private val KEY = "reminder_list"
 
+    private var selectedHour = 12
+    private var selectedMinute = 0
+    private var isAm = false // default PM
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reminder)
 
-        findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
+        findViewById<LinearLayout>(R.id.backButton).setOnClickListener { finish() }
+
+        // Init with current time
+        val cal = Calendar.getInstance()
+        selectedHour = cal.get(Calendar.HOUR).let { if (it == 0) 12 else it }
+        selectedMinute = cal.get(Calendar.MINUTE)
+        isAm = cal.get(Calendar.AM_PM) == Calendar.AM
+
+        val hourDisplay = findViewById<TextView>(R.id.hourDisplay)
+        val minuteDisplay = findViewById<TextView>(R.id.minuteDisplay)
+        val amPmDisplay = findViewById<TextView>(R.id.amPmDisplay)
+
+        fun updateDisplay() {
+            hourDisplay.text = String.format("%02d", selectedHour)
+            minuteDisplay.text = String.format("%02d", selectedMinute)
+            amPmDisplay.text = if (isAm) "AM" else "PM"
+        }
+        updateDisplay()
+
+        // Hour controls
+        findViewById<Button>(R.id.hourUp).setOnClickListener {
+            selectedHour = if (selectedHour >= 12) 1 else selectedHour + 1
+            updateDisplay()
+        }
+        findViewById<Button>(R.id.hourDown).setOnClickListener {
+            selectedHour = if (selectedHour <= 1) 12 else selectedHour - 1
+            updateDisplay()
+        }
+
+        // Minute controls
+        findViewById<Button>(R.id.minuteUp).setOnClickListener {
+            selectedMinute = if (selectedMinute >= 59) 0 else selectedMinute + 1
+            updateDisplay()
+        }
+        findViewById<Button>(R.id.minuteDown).setOnClickListener {
+            selectedMinute = if (selectedMinute <= 0) 59 else selectedMinute - 1
+            updateDisplay()
+        }
+
+        // AM/PM toggle
+        findViewById<TextView>(R.id.amPmToggle).setOnClickListener {
+            isAm = !isAm
+            updateDisplay()
+        }
+        amPmDisplay.setOnClickListener {
+            isAm = !isAm
+            updateDisplay()
+        }
+
+        // Quick select buttons
+        fun addMinutes(mins: Int) {
+            val totalMinutes = (if (isAm) 0 else 12) * 60 +
+                    (if (selectedHour == 12) 0 else selectedHour) * 60 + selectedMinute + mins
+            val total24 = totalMinutes % (24 * 60)
+            val h24 = total24 / 60
+            val m = total24 % 60
+            isAm = h24 < 12
+            selectedHour = when {
+                h24 == 0 -> 12
+                h24 > 12 -> h24 - 12
+                else -> h24
+            }
+            selectedMinute = m
+            updateDisplay()
+        }
+
+        findViewById<Button>(R.id.quick15).setOnClickListener { addMinutes(15) }
+        findViewById<Button>(R.id.quick30).setOnClickListener { addMinutes(30) }
+        findViewById<Button>(R.id.quick1h).setOnClickListener { addMinutes(60) }
+        findViewById<Button>(R.id.quick2h).setOnClickListener { addMinutes(120) }
+
+        // Set reminder
+        findViewById<LinearLayout>(R.id.setReminderButton).setOnClickListener {
+            setReminder()
+        }
+
+        // Request exact alarm permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+            }
+        }
 
         loadReminders()
+        setupRecyclerView()
+    }
 
+    private fun setReminder() {
+        val titleInput = findViewById<EditText>(R.id.reminderTitle)
+        val title = titleInput.text.toString().trim()
+
+        if (title.isEmpty()) {
+            Toast.makeText(this, "Please enter a title!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val hour24 = when {
+            isAm && selectedHour == 12 -> 0
+            !isAm && selectedHour != 12 -> selectedHour + 12
+            else -> selectedHour
+        }
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour24)
+            set(Calendar.MINUTE, selectedMinute)
+            set(Calendar.SECOND, 0)
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+
+        val timeStr = String.format("%02d:%02d %s", selectedHour, selectedMinute, if (isAm) "AM" else "PM")
+        val id = System.currentTimeMillis().toInt()
+
+        val obj = JSONObject().apply {
+            put("id", id)
+            put("title", title)
+            put("time", timeStr)
+            put("triggerTime", calendar.timeInMillis)
+        }
+
+        reminders.add(0, obj)
+        adapter.notifyItemInserted(0)
+        saveReminders()
+        scheduleAlarm(id, title, timeStr, calendar.timeInMillis)
+
+        titleInput.setText("")
+        Toast.makeText(this, "Reminder set for $timeStr ✅", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setupRecyclerView() {
         val recyclerView = findViewById<RecyclerView>(R.id.remindersRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -59,67 +190,6 @@ class ReminderActivity : AppCompatActivity() {
         }
 
         recyclerView.adapter = adapter
-
-        // Request exact alarm permission for Android 12+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            if (!alarmManager.canScheduleExactAlarms()) {
-                val intent = Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                startActivity(intent)
-            }
-        }
-
-        val timePicker = findViewById<TimePicker>(R.id.timePicker)
-        timePicker.setIs24HourView(false)
-
-        
-        findViewById<Button>(R.id.setReminderButton).setOnClickListener {
-            setReminder(timePicker)
-        }    
-    }
-
-    private fun setReminder(timePicker: TimePicker) {
-        val titleInput = findViewById<EditText>(R.id.reminderTitle)
-        val title = titleInput.text.toString().trim()
-
-        if (title.isEmpty()) {
-            Toast.makeText(this, "Please enter a title!", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val hour = timePicker.hour.coerceIn(0, 23)
-        val minute = timePicker.minute.coerceIn(0, 59)
-
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) {
-                add(Calendar.DAY_OF_MONTH, 1)
-            }
-        }
-
-        val timeStr = String.format("%02d:%02d %s",
-            if (hour % 12 == 0) 12 else hour % 12,
-            minute,
-            if (hour < 12) "AM" else "PM")
-
-        val id = System.currentTimeMillis().toInt()
-
-        val obj = JSONObject().apply {
-            put("id", id)
-            put("title", title)
-            put("time", timeStr)
-            put("triggerTime", calendar.timeInMillis)
-        }
-
-        reminders.add(0, obj)
-        adapter.notifyItemInserted(0)
-        saveReminders()
-        scheduleAlarm(id, title, timeStr, calendar.timeInMillis)
-
-        titleInput.setText("")
-        Toast.makeText(this, "Reminder set for $timeStr", Toast.LENGTH_SHORT).show()
     }
 
     private fun scheduleAlarm(id: Int, title: String, time: String, triggerTime: Long) {
@@ -132,13 +202,11 @@ class ReminderActivity : AppCompatActivity() {
             this, id, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (alarmManager.canScheduleExactAlarms()) {
+            if (alarmManager.canScheduleExactAlarms())
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-            } else {
+            else
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-            }
         } else {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
         }
