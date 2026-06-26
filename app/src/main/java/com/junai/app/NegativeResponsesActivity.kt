@@ -36,8 +36,9 @@ class NegativeResponsesActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
 
-        loadNegatives()
         setupRecyclerView()
+        loadNegatives()
+        adapter.notifyDataSetChanged()
     }
 
     private fun setupRecyclerView() {
