@@ -20,23 +20,24 @@ class PermissionCentreActivity : AppCompatActivity() {
         val title: String,
         val reason: String,
         val permission: String?,
-        val specialAction: String? = null
+        val specialAction: String? = null,
+        val iconRes: Int = R.drawable.ic_mic
     )
 
     private val permissions = listOf(
-        PermissionItem("Microphone", "Required for voice input and STT (Speech-to-Text) in chat", Manifest.permission.RECORD_AUDIO),
-        PermissionItem("Phone Calls", "Required to make calls directly from Jun AI", Manifest.permission.CALL_PHONE),
-        PermissionItem("Contacts", "Required to read contacts for calling features", Manifest.permission.READ_CONTACTS),
+        PermissionItem("Microphone", "Required for voice input and STT (Speech-to-Text) in chat", Manifest.permission.RECORD_AUDIO, iconRes = R.drawable.ic_mic),
+        PermissionItem("Phone Calls", "Required to make calls directly from Jun AI", Manifest.permission.CALL_PHONE, iconRes = R.drawable.ic_send),
+        PermissionItem("Contacts", "Required to read contacts for calling features", Manifest.permission.READ_CONTACTS, iconRes = R.drawable.ic_menu),
         PermissionItem("Notifications", "Required to show reminders and alarm notifications",
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.POST_NOTIFICATIONS else null),
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.POST_NOTIFICATIONS else null, iconRes = R.drawable.ic_calendar),
         PermissionItem("Storage (Media Audio)", "Required to read and play music files from your device",
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_AUDIO
-            else Manifest.permission.READ_EXTERNAL_STORAGE),
-        PermissionItem("Overlay (Draw over apps)", "Required for Mini-Jun floating assistant", null, "OVERLAY"),
-        PermissionItem("Modify System Settings", "Required to set ringtone and alarm tone from Music Player", null, "WRITE_SETTINGS"),
+            else Manifest.permission.READ_EXTERNAL_STORAGE, iconRes = R.drawable.ic_note_doc),
+        PermissionItem("Overlay (Draw over apps)", "Required for Mini-Jun floating assistant", null, "OVERLAY", R.drawable.ic_bot_hide),
+        PermissionItem("Modify System Settings", "Required to set ringtone and alarm tone from Music Player", null, "WRITE_SETTINGS", R.drawable.ic_edit),
         PermissionItem("Exact Alarms", "Required to fire reminders at the exact scheduled time",
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Manifest.permission.SCHEDULE_EXACT_ALARM else null),
-        PermissionItem("Internet", "Required for AI chat responses and translation", Manifest.permission.INTERNET)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Manifest.permission.SCHEDULE_EXACT_ALARM else null, iconRes = R.drawable.ic_calendar),
+        PermissionItem("Internet", "Required for AI chat responses and translation", Manifest.permission.INTERNET, iconRes = R.drawable.ic_send)
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,18 +54,39 @@ class PermissionCentreActivity : AppCompatActivity() {
             row.findViewById<TextView>(R.id.permissionTitle).text = item.title
             row.findViewById<TextView>(R.id.permissionReason).text = item.reason
 
+            // Set icon with blue tint
+            val iconView = row.findViewById<android.widget.ImageView>(R.id.permissionIcon)
+            iconView.setImageResource(item.iconRes)
+            iconView.setColorFilter(android.graphics.Color.parseColor("#1E88E5"))
+
             val switch = row.findViewById<Switch>(R.id.permissionSwitch)
             switch.isChecked = isGranted(item)
             switch.isEnabled = !isAlwaysGranted(item)
 
+            fun updateToggleColor(checked: Boolean) {
+                if (checked) {
+                    switch.thumbTintList = android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.parseColor("#4CAF50"))
+                    switch.trackTintList = android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.parseColor("#804CAF50"))
+                } else {
+                    switch.thumbTintList = android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.parseColor("#E53935"))
+                    switch.trackTintList = android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.parseColor("#80E53935"))
+                }
+            }
+            updateToggleColor(switch.isChecked)
+
             switch.setOnCheckedChangeListener { _, isChecked ->
+                updateToggleColor(isChecked)
                 if (isChecked) {
                     requestPermission(item)
                 } else {
-                    // Cannot revoke programmatically — open settings
                     Toast.makeText(this, "To revoke, go to App Settings", Toast.LENGTH_SHORT).show()
                     openAppSettings()
                     switch.isChecked = true
+                    updateToggleColor(true)
                 }
             }
 
@@ -79,7 +101,15 @@ class PermissionCentreActivity : AppCompatActivity() {
         permissions.forEachIndexed { index, item ->
             val row = container.getChildAt(index) ?: return@forEachIndexed
             val switch = row.findViewById<Switch>(R.id.permissionSwitch)
-            switch.isChecked = isGranted(item)
+            val checked = isGranted(item)
+            switch.isChecked = checked
+            if (checked) {
+                switch.thumbTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50"))
+                switch.trackTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#804CAF50"))
+            } else {
+                switch.thumbTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E53935"))
+                switch.trackTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#80E53935"))
+            }
         }
     }
 
