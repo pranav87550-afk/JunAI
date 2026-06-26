@@ -31,7 +31,7 @@ class ReminderActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reminder)
 
-        findViewById<LinearLayout>(R.id.backButton).setOnClickListener { finish() }
+        findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
 
         // Init with current time
         val cal = Calendar.getInstance()
