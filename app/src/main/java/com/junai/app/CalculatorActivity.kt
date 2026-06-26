@@ -1,6 +1,9 @@
 package com.junai.app
 
 import android.os.Bundle
+import android.view.MotionEvent
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -17,7 +20,7 @@ class CalculatorActivity : AppCompatActivity() {
         findViewById<Button>(R.id.backButton).setOnClickListener { finish() }
 
         val expressionText = findViewById<TextView>(R.id.expressionText)
-        val resultText = findViewById<TextView>(R.id.resultText)
+        val resultText     = findViewById<TextView>(R.id.resultText)
 
         fun updateDisplay() {
             expressionText.text = expression
@@ -29,38 +32,63 @@ class CalculatorActivity : AppCompatActivity() {
             updateDisplay()
         }
 
-        findViewById<Button>(R.id.btnAC).setOnClickListener {
-            expression = ""
-            result = "0"
-            updateDisplay()
+        // ── Press / release animation ──────────────────────────
+        fun View.addPressAnimation(onClick: () -> Unit) {
+            setOnTouchListener { v, event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        v.animate()
+                            .scaleX(0.88f).scaleY(0.88f)
+                            .setDuration(80)
+                            .setInterpolator(AccelerateDecelerateInterpolator())
+                            .start()
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        v.animate()
+                            .scaleX(1f).scaleY(1f)
+                            .setDuration(120)
+                            .setInterpolator(AccelerateDecelerateInterpolator())
+                            .withEndAction {
+                                if (event.action == MotionEvent.ACTION_UP) onClick()
+                            }
+                            .start()
+                    }
+                }
+                true
+            }
         }
 
-        findViewById<Button>(R.id.btnDel).setOnClickListener {
+        // ── Button bindings ────────────────────────────────────
+        findViewById<Button>(R.id.btnAC).addPressAnimation {
+            expression = ""; result = "0"; updateDisplay()
+        }
+
+        findViewById<Button>(R.id.btnDel).addPressAnimation {
             if (expression.isNotEmpty()) {
                 expression = expression.dropLast(1)
                 updateDisplay()
             }
         }
 
-        findViewById<Button>(R.id.btnPercent).setOnClickListener { appendToExpression("%") }
-        findViewById<Button>(R.id.btnDiv).setOnClickListener { appendToExpression("÷") }
-        findViewById<Button>(R.id.btnMul).setOnClickListener { appendToExpression("×") }
-        findViewById<Button>(R.id.btnSub).setOnClickListener { appendToExpression("−") }
-        findViewById<Button>(R.id.btnAdd).setOnClickListener { appendToExpression("+") }
-        findViewById<Button>(R.id.btnDot).setOnClickListener { appendToExpression(".") }
-        findViewById<Button>(R.id.btn0).setOnClickListener { appendToExpression("0") }
-        findViewById<Button>(R.id.btn00).setOnClickListener { appendToExpression("00") }
-        findViewById<Button>(R.id.btn1).setOnClickListener { appendToExpression("1") }
-        findViewById<Button>(R.id.btn2).setOnClickListener { appendToExpression("2") }
-        findViewById<Button>(R.id.btn3).setOnClickListener { appendToExpression("3") }
-        findViewById<Button>(R.id.btn4).setOnClickListener { appendToExpression("4") }
-        findViewById<Button>(R.id.btn5).setOnClickListener { appendToExpression("5") }
-        findViewById<Button>(R.id.btn6).setOnClickListener { appendToExpression("6") }
-        findViewById<Button>(R.id.btn7).setOnClickListener { appendToExpression("7") }
-        findViewById<Button>(R.id.btn8).setOnClickListener { appendToExpression("8") }
-        findViewById<Button>(R.id.btn9).setOnClickListener { appendToExpression("9") }
+        findViewById<Button>(R.id.btnPercent).addPressAnimation { appendToExpression("%") }
+        findViewById<Button>(R.id.btnDiv).addPressAnimation    { appendToExpression("÷") }
+        findViewById<Button>(R.id.btnMul).addPressAnimation    { appendToExpression("×") }
+        findViewById<Button>(R.id.btnSub).addPressAnimation    { appendToExpression("−") }
+        findViewById<Button>(R.id.btnAdd).addPressAnimation    { appendToExpression("+") }
+        findViewById<Button>(R.id.btnDot).addPressAnimation    { appendToExpression(".") }
+        findViewById<Button>(R.id.btn0).addPressAnimation      { appendToExpression("0") }
+        findViewById<Button>(R.id.btn00).addPressAnimation     { appendToExpression("00") }
+        findViewById<Button>(R.id.btn1).addPressAnimation      { appendToExpression("1") }
+        findViewById<Button>(R.id.btn2).addPressAnimation      { appendToExpression("2") }
+        findViewById<Button>(R.id.btn3).addPressAnimation      { appendToExpression("3") }
+        findViewById<Button>(R.id.btn4).addPressAnimation      { appendToExpression("4") }
+        findViewById<Button>(R.id.btn5).addPressAnimation      { appendToExpression("5") }
+        findViewById<Button>(R.id.btn6).addPressAnimation      { appendToExpression("6") }
+        findViewById<Button>(R.id.btn7).addPressAnimation      { appendToExpression("7") }
+        findViewById<Button>(R.id.btn8).addPressAnimation      { appendToExpression("8") }
+        findViewById<Button>(R.id.btn9).addPressAnimation      { appendToExpression("9") }
 
-        findViewById<Button>(R.id.btnEquals).setOnClickListener {
+        findViewById<Button>(R.id.btnEquals).addPressAnimation {
             try {
                 val expr = expression
                     .replace("÷", "/")
@@ -74,12 +102,12 @@ class CalculatorActivity : AppCompatActivity() {
                 expression = result
                 updateDisplay()
             } catch (e: Exception) {
-    result = when {
-        expression.contains("/0") -> "Can't divide by zero! ❌"
-        expression.isEmpty() -> "0"
-        else -> "Error ❌"
-    }
-    updateDisplay()
+                result = when {
+                    expression.contains("/0") -> "Can't divide by zero! ❌"
+                    expression.isEmpty()      -> "0"
+                    else                      -> "Error ❌"
+                }
+                updateDisplay()
             }
         }
     }
@@ -88,11 +116,9 @@ class CalculatorActivity : AppCompatActivity() {
         val tokens = expr.trim()
         return object : Any() {
             var pos = -1
-            var ch = 0
+            var ch  = 0
 
-            fun nextChar() {
-                ch = if (++pos < tokens.length) tokens[pos].code else -1
-            }
+            fun nextChar() { ch = if (++pos < tokens.length) tokens[pos].code else -1 }
 
             fun eat(charToEat: Int): Boolean {
                 while (ch == ' '.code) nextChar()
@@ -113,7 +139,7 @@ class CalculatorActivity : AppCompatActivity() {
                     x = when {
                         eat('+'.code) -> x + parseTerm()
                         eat('-'.code) -> x - parseTerm()
-                        else -> return x
+                        else          -> return x
                     }
                 }
             }
@@ -124,9 +150,9 @@ class CalculatorActivity : AppCompatActivity() {
                     x = when {
                         eat('*'.code) -> x * parseFactor()
                         eat('/'.code) -> {
-                            val divisor = parseFactor()
-                            if (divisor == 0.0) throw RuntimeException("Division by zero")
-                            x / divisor
+                            val d = parseFactor()
+                            if (d == 0.0) throw RuntimeException("Division by zero")
+                            x / d
                         }
                         else -> return x
                     }
@@ -139,8 +165,7 @@ class CalculatorActivity : AppCompatActivity() {
                 var x: Double
                 val startPos = pos
                 if (eat('('.code)) {
-                    x = parseExpression()
-                    eat(')'.code)
+                    x = parseExpression(); eat(')'.code)
                 } else if (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) {
                     while (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) nextChar()
                     x = tokens.substring(startPos, pos).toBigDecimal().toDouble()
