@@ -101,8 +101,8 @@ class MusicHomeActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         val items = mutableListOf<Pair<String, String>>()
-        items.add(Pair("🎵 All Songs", "${allSongs.size} songs"))
-        playlists.forEach { items.add(Pair("📋 ${it.first}", "${it.second.size} songs")) }
+        items.add(Pair("All Songs", "${allSongs.size} songs"))
+        playlists.forEach { items.add(Pair(it.first, "${it.second.size} songs")) }
 
         adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -114,6 +114,16 @@ class MusicHomeActivity : AppCompatActivity() {
             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
                 holder.itemView.findViewById<TextView>(R.id.itemTitle).text = items[position].first
                 holder.itemView.findViewById<TextView>(R.id.itemSubtitle).text = items[position].second
+
+                // Icon — music note for All Songs, doc icon for playlists
+                val icon = holder.itemView.findViewById<android.widget.ImageView>(R.id.itemIcon)
+                if (position == 0) {
+                    icon.setImageResource(R.drawable.ic_play)
+                    icon.setColorFilter(android.graphics.Color.parseColor("#E53935"))
+                } else {
+                    icon.setImageResource(R.drawable.ic_note_doc)
+                    icon.setColorFilter(android.graphics.Color.parseColor("#FF9800"))
+                }
 
                 if (position > 0) {
                     holder.itemView.findViewById<ImageButton>(R.id.itemDeleteButton).apply {
