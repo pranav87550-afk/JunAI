@@ -45,6 +45,8 @@ class TtsHelper(
         if (!isReady) return
         applySettings()
 
+        val cleanText = text.replace(Regex("[\\p{So}\\p{Cn}\\p{Cs}]"), "").trim() // ← Emojis remove
+
         speakingIndicator.visibility = View.VISIBLE
         animateDot(dot1, 0)
         animateDot(dot2, 150)
@@ -67,7 +69,7 @@ class TtsHelper(
             }
         })
 
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "JUN_TTS")
+        tts.speak(cleanText, TextToSpeech.QUEUE_FLUSH, null, "JUN_TTS") // ← cleanText use
     }
 
     fun shutdown() {
