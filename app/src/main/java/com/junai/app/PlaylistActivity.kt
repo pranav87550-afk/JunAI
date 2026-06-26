@@ -132,25 +132,60 @@ class PlaylistActivity : AppCompatActivity() {
     private fun showAddSongsDialog() {
         val sortedSongs = allSongs.sortedBy { it.title }
         val selected = BooleanArray(sortedSongs.size)
-        val names = sortedSongs.map { it.title }.toTypedArray()
 
-        AlertDialog.Builder(this)
-            .setTitle("Add Songs")
-            .setMultiChoiceItems(names, selected) { _, which, isChecked ->
-                selected[which] = isChecked
+        val dialogView = LayoutInflater.from(this)
+            .inflate(R.layout.dialog_add_songs, null)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.addSongsRecyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_song_select, parent, false)
+                return object : RecyclerView.ViewHolder(view) {}
             }
-            .setPositiveButton("Add") { _, _ ->
-                sortedSongs.forEachIndexed { index, song ->
-                    if (selected[index] && !playlistSongs.contains(song)) {
-                        playlistSongs.add(song)
-                    }
+
+            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                val song = sortedSongs[position]
+                val checkBox = holder.itemView.findViewById<android.widget.CheckBox>(R.id.songCheckBox)
+                holder.itemView.findViewById<TextView>(R.id.selectSongTitle).text = song.title
+                holder.itemView.findViewById<TextView>(R.id.selectSongArtist).text = song.artist
+
+                checkBox.setOnCheckedChangeListener(null)
+                checkBox.isChecked = selected[position]
+                checkBox.setOnCheckedChangeListener { _, isChecked ->
+                    selected[position] = isChecked
                 }
-                playlistSongs.sortBy { it.title }
-                adapter.notifyDataSetChanged()
-                savePlaylist()
+                holder.itemView.setOnClickListener {
+                    checkBox.isChecked = !checkBox.isChecked
+                }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+
+            override fun getItemCount() = sortedSongs.size
+        }
+
+        dialogView.findViewById<Button>(R.id.cancelAddSongsButton).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<Button>(R.id.confirmAddSongsButton).setOnClickListener {
+            sortedSongs.forEachIndexed { index, song ->
+                if (selected[index] && !playlistSongs.contains(song)) {
+                    playlistSongs.add(song)
+                }
+            }
+            playlistSongs.sortBy { it.title }
+            adapter.notifyDataSetChanged()
+            savePlaylist()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun savePlaylist() {
