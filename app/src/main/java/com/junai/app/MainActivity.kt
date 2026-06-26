@@ -172,7 +172,6 @@ class MainActivity : AppCompatActivity() {
 
         drawerNav(R.id.menuSettings,          SettingsActivity::class.java)
         drawerNav(R.id.menuMiniJun,           MiniJunSettingsActivity::class.java)
-        drawerNav(R.id.menuMemory,            UnansweredActivity::class.java)
         drawerNav(R.id.menuLearningCenter,    LearningCenterActivity::class.java)
         drawerNav(R.id.menuNegative,          NegativeResponsesActivity::class.java)
         drawerNav(R.id.menuNotes,             NotesActivity::class.java)
@@ -183,7 +182,6 @@ class MainActivity : AppCompatActivity() {
         drawerNav(R.id.menuDraw,              DrawActivity::class.java)
         drawerNav(R.id.menuSongs,             MusicHomeActivity::class.java)
         drawerNav(R.id.menuPermissionCentre,  PermissionCentreActivity::class.java)
-        drawerNav(R.id.menuPerformance,       DataManagementActivity::class.java)
         drawerNav(R.id.menuDataManagement,    DataManagementActivity::class.java)
         drawerNav(R.id.menuVoiceCommands,     VoiceCommandsActivity::class.java)
     }
