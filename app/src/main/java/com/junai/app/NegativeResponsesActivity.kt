@@ -1,6 +1,12 @@
 package com.junai.app
 
 import android.os.Bundle
+import android.graphics.Color
+import android.graphics.Typeface
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Button
@@ -50,8 +56,11 @@ class NegativeResponsesActivity : AppCompatActivity() {
                 val question = item.getString("question")
                 val answer = item.getString("answer")
 
-                holder.itemView.findViewById<TextView>(R.id.negativeQuestion).text = "Q: $question"
-                holder.itemView.findViewById<TextView>(R.id.negativeAnswer).text = "Wrong answer: $answer"
+                val questionSpan = SpannableString("Q: $question")
+                questionSpan.setSpan(ForegroundColorSpan(Color.parseColor("#E53935")), 0, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                questionSpan.setSpan(StyleSpan(Typeface.BOLD), 0, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                holder.itemView.findViewById<TextView>(R.id.negativeQuestion).text = questionSpan
+                holder.itemView.findViewById<TextView>(R.id.negativeAnswer).text = answer
 
                 val input = holder.itemView.findViewById<EditText>(R.id.correctAnswerInput)
 
