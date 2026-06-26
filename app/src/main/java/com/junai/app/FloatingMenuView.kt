@@ -45,7 +45,7 @@ class FloatingMenuView(context: Context) : FrameLayout(context) {
     private val orbitContainer: FrameLayout
     private val spokeView: SpokeLineView
 
-    private data class Slot(val view: ImageView, val angleDeg: Float)
+    private data class Slot(val view: View, val angleDeg: Float)
     private val slots = mutableListOf<Slot>()
 
     private var isShowing = false
