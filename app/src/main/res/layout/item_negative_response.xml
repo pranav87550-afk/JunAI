@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/dialog_card_bg"
+        android:padding="16dp">
+
+        <!-- Q: <question> -->
+        <TextView
+            android:id="@+id/negativeQuestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="12dp"/>
+
+        <!-- "Wrong answer:" label -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wrong answer:"
+            android:textColor="#E53935"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp"/>
+
+        <!-- Wrong answer text -->
+        <TextView
+            android:id="@+id/negativeAnswer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:paddingBottom="14dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2A2A33"
+            android:layout_marginBottom="14dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Type correct answer..."
+            android:textColor="#888893"
+            android:textSize="12sp"
+            android:paddingBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/correctAnswerInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/input_background"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:hint="Enter correct response"
+            android:textColorHint="#666670"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:inputType="textMultiLine"
+            android:layout_marginBottom="14dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/saveCorrectButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="💾  SAVE"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:background="@drawable/negative_btn_save"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/deleteNegativeButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="🗑️  DELETE"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:background="@drawable/negative_btn_delete"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
