@@ -2,17 +2,19 @@ package com.junai.app.reasoning
 
 /**
  * ConfidenceEngine — Formalizes the confidence concept that already exists
- * scattered across the app (KnowledgeRepository's 90/70 thresholds, etc.)
- * into one normalized scale + consistent low-confidence disclaimer.
+ * scattered across the app into one normalized scale + consistent
+ * low-confidence disclaimer.
  *
- * Different parts of the app use different raw scales (0-100 for the
- * original knowledge base, 0-1 for newer memory/semantic/graph features).
- * normalize() handles that so callers don't have to think about it.
+ * Thresholds (0.70 / 0.90) deliberately match the existing knowledge-base
+ * cutoffs already used in ChatIntentHandler's UNKNOWN branch (confidence
+ * >= 90 -> direct answer, >= 70 -> "I think you mean", else -> failure) so
+ * this formalizes what already existed instead of introducing a second,
+ * inconsistent scale.
  */
 object ConfidenceEngine {
 
-    const val LOW_CONFIDENCE_THRESHOLD = 0.5f
-    const val HIGH_CONFIDENCE_THRESHOLD = 0.75f
+    const val LOW_CONFIDENCE_THRESHOLD = 0.70f
+    const val HIGH_CONFIDENCE_THRESHOLD = 0.90f
 
     enum class ConfidenceLevel { HIGH, MEDIUM, LOW }
 
