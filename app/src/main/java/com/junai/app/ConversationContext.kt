@@ -168,13 +168,13 @@ class ConversationContext {
      */
     fun isNaturalFollowUp(currentIntent: String): Boolean {
         val naturalChains = mapOf(
-            "GREET"       to listOf("HOW_ARE_YOU", "WHO_ARE_YOU", "THANK"),
-            "PLAY_MUSIC"  to listOf("NEXT_SONG", "PREV_SONG", "PAUSE_MUSIC", "STOP_MUSIC"),
-            "TELL_TIME"   to listOf("TELL_DATE", "SET_REMINDER"),
-            "CREATE_NOTE" to listOf("SHOW_NOTES"),
-            "SET_REMINDER"to listOf("SHOW_REMINDER"),
-            "SEARCH_WEB"  to listOf("SEARCH_WEB", "OPEN_APP"),
-            "UNKNOWN"     to listOf("LEARN_QA")
+            "GREET"        to listOf("HOW_ARE_YOU", "WHO_ARE_YOU", "THANK"),
+            "PLAY_MUSIC"   to listOf("NEXT_SONG", "PREV_SONG", "PAUSE_MUSIC", "STOP_MUSIC"),
+            "TELL_TIME"    to listOf("TELL_DATE", "SET_REMINDER"),
+            "CREATE_NOTE"  to listOf("SHOW_NOTES"),
+            "SET_REMINDER" to listOf("SHOW_REMINDER"),
+            "SEARCH_WEB"   to listOf("SEARCH_WEB", "OPEN_APP"),
+            "UNKNOWN"      to listOf("LEARN_QA")
         )
         val allowed = naturalChains[lastIntent] ?: return false
         return currentIntent in allowed
