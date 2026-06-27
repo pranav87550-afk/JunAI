@@ -6,6 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.junai.app.memory.MemoryDao
+import com.junai.app.memory.MemoryEntity
 
 @Database(
     entities = [
@@ -17,15 +19,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RelatedQuestionItem::class,
         FailureLog::class,
         LearningItem::class,
-        LearningStatistics::class
+        LearningStatistics::class,
+        MemoryEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun knowledgeDao(): KnowledgeDao
     abstract fun learningDao(): LearningDao
+    abstract fun memoryDao(): MemoryDao
 
     companion object {
         @Volatile
@@ -155,6 +159,27 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // NEW — Phase 1: Hybrid Memory System
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS memory_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        summary TEXT NOT NULL,
+                        category TEXT NOT NULL DEFAULT 'GENERAL',
+                        source TEXT NOT NULL DEFAULT 'CONVERSATION',
+                        memoryType TEXT NOT NULL DEFAULT 'SHORT_TERM',
+                        importance REAL NOT NULL DEFAULT 0.3,
+                        confidence REAL NOT NULL DEFAULT 1.0,
+                        tags TEXT NOT NULL DEFAULT '',
+                        timestamp INTEGER NOT NULL,
+                        lastAccessed INTEGER NOT NULL,
+                        accessCount INTEGER NOT NULL DEFAULT 0
+                    )
+                """)
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -162,7 +187,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "junai_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
                 INSTANCE = instance
                 instance
