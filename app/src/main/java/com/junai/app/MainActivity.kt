@@ -194,9 +194,11 @@ class MainActivity : AppCompatActivity() {
                 if (ttsHelper.isReady) ttsHelper.speak(text)
             }
             override fun onThumbsUp(text: String, question: String) {
+                FeedbackLearner(this@MainActivity).onThumbsUp(text, question)
                 android.widget.Toast.makeText(this@MainActivity, "👍 Great!", android.widget.Toast.LENGTH_SHORT).show()
             }
             override fun onThumbsDown(text: String, question: String) {
+                FeedbackLearner(this@MainActivity).onThumbsDown(text, question)
                 if (question.isNotEmpty()) {
                     NegativeResponsesActivity.addNegative(this@MainActivity, question, text)
                     android.widget.Toast.makeText(this@MainActivity, "👎 Added to Negative Responses!", android.widget.Toast.LENGTH_SHORT).show()
