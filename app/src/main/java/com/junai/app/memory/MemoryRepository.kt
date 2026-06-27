@@ -10,10 +10,10 @@ import kotlinx.coroutines.launch
  * MemoryRepository — Single entry point for Jun's hybrid memory system.
  *
  * Phase 1: storage layer (remember / promote / forget / read).
- * Phase 2 (NEW): wired to ImportanceEngine — captureTurn() scores real
- * conversation text automatically instead of relying on a fixed default
- * importance value. Low-value turns score near zero and get cleaned up
- * by runMaintenance() on their own — no manual filtering needed.
+ * Phase 2: ImportanceEngine scoring wired into captureTurn().
+ * Phase 3 (NEW): compressShortTermMemories() — once SHORT_TERM volume
+ * crosses a batch size, oldest entries get condensed into one summary
+ * memory via MemoryCompressor instead of being kept forever individually.
  */
 class MemoryRepository(context: Context) {
 
@@ -25,9 +25,15 @@ class MemoryRepository(context: Context) {
         const val FORGET_THRESHOLD = 0.20f      // importance < this -> eligible to forget
         const val FORGET_AGE_MS = 7L * 24 * 60 * 60 * 1000  // 7 days
         const val WORKING_ACCESS_COUNT = 3      // accessed 3+ times -> promote to WORKING
+        const val COMPRESSION_BATCH_SIZE = 20   // oldest N SHORT_TERM entries -> 1 summary
     }
 
-    data class MaintenanceResult(val promoted: Int, val workingPromoted: Int, val forgotten: Int)
+    data class MaintenanceResult(
+        val compressed: Int,
+        val promoted: Int,
+        val workingPromoted: Int,
+        val forgotten: Int
+    )
 
     // ── Write ─────────────────────────────────────────────────────
 
@@ -65,14 +71,7 @@ class MemoryRepository(context: Context) {
         )
     }
 
-    /**
-     * NEW (Phase 2) — Captures a real conversation turn and scores it
-     * automatically via ImportanceEngine. Called from ChatIntentHandler
-     * after every user message.
-     *
-     * @param isCorrection reserved for a future phase once FeedbackLearner's
-     * thumbs-down signal is wired into this call — defaults to false for now.
-     */
+    /** Captures a real conversation turn, scored automatically via ImportanceEngine. */
     suspend fun captureTurn(text: String, intentName: String, isCorrection: Boolean = false): Long {
         if (text.isBlank()) return -1L
 
@@ -107,10 +106,6 @@ class MemoryRepository(context: Context) {
 
     // ── Access tracking ───────────────────────────────────────────
 
-    /**
-     * Call this whenever a memory is actually used/referenced in a response.
-     * Repeated access signals real relevance -> auto-promotes SHORT_TERM to WORKING.
-     */
     suspend fun touch(id: Int) {
         dao.recordAccess(id)
         val memory = dao.getById(id) ?: return
@@ -119,25 +114,75 @@ class MemoryRepository(context: Context) {
         }
     }
 
-    // ── Maintenance (promotion + forgetting) ─────────────────────
+    // ── Compression (Phase 3) ──────────────────────────────────────
 
     /**
-     * Runs one maintenance pass. Triggered from ChatIntentHandler's init
-     * block (fire-and-forget) so ranking/forgetting actually runs each session.
+     * Condenses the oldest batch of SHORT_TERM memories into a single
+     * summary memory once volume crosses COMPRESSION_BATCH_SIZE.
+     * Repeats until fewer than the batch size remain (handles backlog).
+     *
+     * Detailed raw entries are only "temporary" by design — once folded
+     * into a summary, the originals are removed; the summary itself
+     * still goes through normal promotion/forgetting like any memory.
      */
+    suspend fun compressShortTermMemories(): Int {
+        var totalCompressed = 0
+
+        while (true) {
+            val shortTerm = dao.getShortTerm()
+            if (shortTerm.size < COMPRESSION_BATCH_SIZE) break
+
+            val batch = shortTerm.sortedBy { it.timestamp }.take(COMPRESSION_BATCH_SIZE)
+            val summaryText = MemoryCompressor.compress(batch)
+            if (summaryText.isBlank()) break
+
+            val combinedTags = batch
+                .flatMap { it.tags.split(",") }
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .distinct()
+                .joinToString(",")
+
+            val avgImportance = batch.map { it.importance }.average().toFloat()
+
+            remember(
+                summary = summaryText,
+                category = "SUMMARY",
+                source = "COMPRESSION",
+                importance = avgImportance.coerceAtLeast(0.4f),
+                tags = combinedTags,
+                memoryType = "LONG_TERM"
+            )
+
+            for (memory in batch) {
+                dao.delete(memory.id)
+            }
+
+            totalCompressed += batch.size
+        }
+
+        return totalCompressed
+    }
+
+    // ── Maintenance (compression + promotion + forgetting) ────────
+
+    /** Runs one full maintenance pass. Triggered once per session via init block. */
     suspend fun runMaintenance(): MaintenanceResult {
+        // 1. Compress old SHORT_TERM backlog into summaries first
+        val compressed = compressShortTermMemories()
+
         var promoted = 0
         var workingPromoted = 0
         var forgotten = 0
 
-        // 1. Promote high-importance SHORT_TERM -> LONG_TERM
+        // 2. Promote high-importance SHORT_TERM -> LONG_TERM
         val promotionCandidates = dao.getPromotionCandidates(PROMOTION_THRESHOLD)
         for (memory in promotionCandidates) {
             dao.changeType(memory.id, "LONG_TERM")
             promoted++
         }
 
-        // 2. Promote frequently-accessed SHORT_TERM -> WORKING
+        // 3. Promote frequently-accessed SHORT_TERM -> WORKING
         val shortTerm = dao.getShortTerm()
         for (memory in shortTerm) {
             if (memory.accessCount >= WORKING_ACCESS_COUNT) {
@@ -146,7 +191,7 @@ class MemoryRepository(context: Context) {
             }
         }
 
-        // 3. Forget low-importance, stale SHORT_TERM memories
+        // 4. Forget low-importance, stale SHORT_TERM memories
         val cutoff = System.currentTimeMillis() - FORGET_AGE_MS
         val forgettingCandidates = dao.getForgettingCandidates(FORGET_THRESHOLD, cutoff)
         for (memory in forgettingCandidates) {
@@ -154,7 +199,7 @@ class MemoryRepository(context: Context) {
             forgotten++
         }
 
-        return MaintenanceResult(promoted, workingPromoted, forgotten)
+        return MaintenanceResult(compressed, promoted, workingPromoted, forgotten)
     }
 
     /** Fire-and-forget version for calling from UI code without suspend context. */
@@ -165,14 +210,9 @@ class MemoryRepository(context: Context) {
     // ── Read ──────────────────────────────────────────────────────
 
     suspend fun getLongTermMemories(): List<MemoryEntity> = dao.getLongTerm()
-
     suspend fun getWorkingMemories(): List<MemoryEntity> = dao.getWorking()
-
     suspend fun getShortTermMemories(): List<MemoryEntity> = dao.getShortTerm()
-
     suspend fun getEpisodicMemories(): List<MemoryEntity> = dao.getEpisodic()
-
     suspend fun getByCategory(category: String): List<MemoryEntity> = dao.getByCategory(category)
-
     suspend fun getByTag(tag: String): List<MemoryEntity> = dao.getByTag(tag)
 }
