@@ -6,6 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.junai.app.memory.GraphEdgeEntity
+import com.junai.app.memory.GraphNodeEntity
+import com.junai.app.memory.KnowledgeGraphDao
 import com.junai.app.memory.MemoryDao
 import com.junai.app.memory.MemoryEntity
 import com.junai.app.memory.SemanticFactDao
@@ -23,9 +26,11 @@ import com.junai.app.memory.SemanticFactEntity
         LearningItem::class,
         LearningStatistics::class,
         MemoryEntity::class,
-        SemanticFactEntity::class
+        SemanticFactEntity::class,
+        GraphNodeEntity::class,
+        GraphEdgeEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun learningDao(): LearningDao
     abstract fun memoryDao(): MemoryDao
     abstract fun semanticFactDao(): SemanticFactDao
+    abstract fun knowledgeGraphDao(): KnowledgeGraphDao
 
     companion object {
         @Volatile
@@ -174,7 +180,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        // NEW — Phase 4: Semantic Memory
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("""
@@ -192,6 +197,32 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // NEW — Phase 5: Knowledge Graph
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS graph_nodes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        normalizedName TEXT NOT NULL,
+                        type TEXT NOT NULL DEFAULT 'CONCEPT',
+                        timestamp INTEGER NOT NULL
+                    )
+                """)
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS graph_edges (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        fromNodeId INTEGER NOT NULL,
+                        relation TEXT NOT NULL,
+                        toNodeId INTEGER NOT NULL,
+                        confidence REAL NOT NULL DEFAULT 0.8,
+                        sourceText TEXT NOT NULL DEFAULT '',
+                        timestamp INTEGER NOT NULL
+                    )
+                """)
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -199,7 +230,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "junai_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
                 INSTANCE = instance
                 instance
