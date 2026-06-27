@@ -40,6 +40,21 @@ interface LearningDao {
     @Query("UPDATE knowledge_items SET timesAsked = timesAsked + 1, lastUpdated = :time WHERE id = :id")
     suspend fun incrementTimesAsked(id: Int, time: Long = System.currentTimeMillis())
 
+    // ── NEW: Feedback-driven confidence update ──
+    @Query("""
+        UPDATE knowledge_items 
+        SET confidence = :confidence,
+            timesCorrect = timesCorrect + CASE WHEN :incrementCorrect = 1 THEN 1 ELSE 0 END,
+            lastUpdated = :time
+        WHERE id = :id
+    """)
+    suspend fun updateConfidence(
+        id: Int,
+        confidence: Float,
+        incrementCorrect: Int,
+        time: Long = System.currentTimeMillis()
+    )
+
     @Delete
     suspend fun deleteKnowledge(item: KnowledgeItem)
 
