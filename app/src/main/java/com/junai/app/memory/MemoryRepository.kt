@@ -9,18 +9,11 @@ import kotlinx.coroutines.launch
 /**
  * MemoryRepository — Single entry point for Jun's hybrid memory system.
  *
- * Responsibilities (Phase 1 scope only):
- * - Save new memories (default: SHORT_TERM)
- * - Promote SHORT_TERM -> LONG_TERM when importance crosses threshold
- * - Promote SHORT_TERM -> WORKING when a memory is accessed repeatedly
- *   within a short window (actively relevant right now)
- * - Forget low-importance, stale SHORT_TERM memories
- * - Provide read access by type / category / tag
- *
- * NOTE: This phase does NOT hook into ConversationContext or
- * ChatIntentHandler yet — that wiring is intentionally deferred to
- * Phase 2 (Importance Engine), where scoring logic decides what's
- * worth remembering. For now this is a clean, testable storage layer.
+ * Phase 1: storage layer (remember / promote / forget / read).
+ * Phase 2 (NEW): wired to ImportanceEngine — captureTurn() scores real
+ * conversation text automatically instead of relying on a fixed default
+ * importance value. Low-value turns score near zero and get cleaned up
+ * by runMaintenance() on their own — no manual filtering needed.
  */
 class MemoryRepository(context: Context) {
 
@@ -72,6 +65,46 @@ class MemoryRepository(context: Context) {
         )
     }
 
+    /**
+     * NEW (Phase 2) — Captures a real conversation turn and scores it
+     * automatically via ImportanceEngine. Called from ChatIntentHandler
+     * after every user message.
+     *
+     * @param isCorrection reserved for a future phase once FeedbackLearner's
+     * thumbs-down signal is wired into this call — defaults to false for now.
+     */
+    suspend fun captureTurn(text: String, intentName: String, isCorrection: Boolean = false): Long {
+        if (text.isBlank()) return -1L
+
+        val category = mapIntentToCategory(intentName)
+        val tag = category.lowercase()
+        val repetitionCount = dao.getByTag(tag).size
+        val topicFrequency = dao.getByCategory(category).size
+
+        val score = ImportanceEngine.score(
+            text = text,
+            isCorrection = isCorrection,
+            repetitionCount = repetitionCount,
+            topicFrequency = topicFrequency
+        )
+
+        return remember(
+            summary = text,
+            category = category,
+            source = "CONVERSATION",
+            importance = score.total,
+            tags = tag
+        )
+    }
+
+    private fun mapIntentToCategory(intentName: String): String = when (intentName) {
+        "USER_INFO"    -> "PREFERENCE"
+        "LEARN_QA"     -> "FACT"
+        "SET_REMINDER" -> "REMINDER"
+        "CREATE_NOTE"  -> "TASK"
+        else           -> "GENERAL"
+    }
+
     // ── Access tracking ───────────────────────────────────────────
 
     /**
@@ -89,8 +122,8 @@ class MemoryRepository(context: Context) {
     // ── Maintenance (promotion + forgetting) ─────────────────────
 
     /**
-     * Runs one maintenance pass. Should be called periodically
-     * (e.g. on app start, or a background trigger added in a later phase).
+     * Runs one maintenance pass. Triggered from ChatIntentHandler's init
+     * block (fire-and-forget) so ranking/forgetting actually runs each session.
      */
     suspend fun runMaintenance(): MaintenanceResult {
         var promoted = 0
