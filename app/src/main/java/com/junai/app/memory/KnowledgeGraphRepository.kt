@@ -5,13 +5,8 @@ import com.junai.app.AppDatabase
 
 /**
  * KnowledgeGraphRepository — Connects GraphRelationExtractor (write path)
- * with KnowledgeGraphDao (storage), and provides traversal so multiple
- * separate facts chain into one connected path.
- *
- * Example:
- *  captureRelation("I like Python")              -> user -LIKES-> python
- *  captureRelation("Python is used for Jun AI")   -> python -USED_FOR-> jun ai
- *  traceChain("user")  -> ["user -> likes -> python -> used for -> jun ai"]
+ * with KnowledgeGraphDao (storage), plus traversal/answer methods used by
+ * ChatIntentHandler's graph-question intercept.
  */
 class KnowledgeGraphRepository(context: Context) {
 
@@ -24,7 +19,6 @@ class KnowledgeGraphRepository(context: Context) {
         val fromNode = findOrCreateNode(extracted.subject, extracted.subjectType)
         val toNode = findOrCreateNode(extracted.objectValue, extracted.objectType)
 
-        // Avoid duplicate edges for the same fact
         val existing = dao.getEdge(fromNode.id, extracted.relation, toNode.id)
         if (existing != null) return existing
 
@@ -49,11 +43,7 @@ class KnowledgeGraphRepository(context: Context) {
         return node.copy(id = id.toInt())
     }
 
-    /**
-     * Walks the graph from a starting node, following outgoing edges up to
-     * maxHops deep. Returns human-readable chains, e.g.
-     * "user -> likes -> python -> used for -> jun ai"
-     */
+    /** Walks outgoing edges up to maxHops deep. Returns chains like "user -> likes -> python". */
     suspend fun traceChain(startName: String, maxHops: Int = 3): List<String> {
         val startNode = dao.getNodeByName(startName.lowercase().trim()) ?: return emptyList()
         val chains = mutableListOf<String>()
@@ -74,7 +64,6 @@ class KnowledgeGraphRepository(context: Context) {
         }
     }
 
-    /** All direct connections (in + out) for a concept — used to answer "how are X and Y related". */
     suspend fun getRelatedConcepts(name: String): List<GraphEdgeEntity> {
         val node = dao.getNodeByName(name.lowercase().trim()) ?: return emptyList()
         return dao.getOutgoingEdges(node.id) + dao.getIncomingEdges(node.id)
@@ -82,4 +71,46 @@ class KnowledgeGraphRepository(context: Context) {
 
     suspend fun getAllNodes(): List<GraphNodeEntity> = dao.getAllNodes()
     suspend fun getAllEdges(): List<GraphEdgeEntity> = dao.getAllEdges()
+
+    // ── NEW — Answer formatters for ChatIntentHandler's graph-question intercept ──
+
+    /** "What is Python used for?" -> "python is used for jun ai" */
+    suspend fun answerUsedFor(nodeName: String): String? {
+        val node = dao.getNodeByName(nodeName.lowercase().trim()) ?: return null
+        val edges = dao.getOutgoingByRelation(node.id, "USED_FOR")
+        if (edges.isEmpty()) return null
+        val targets = edges.mapNotNull { dao.getNodeById(it.toNodeId)?.name }
+        if (targets.isEmpty()) return null
+        return "${node.name} is used for ${targets.joinToString(", ")} 🔗"
+    }
+
+    /** "How are Python and Jun AI related?" -> walks the chain in either direction. */
+    suspend fun answerHowRelated(nameA: String, nameB: String): String? {
+        val chainsA = traceChain(nameA, maxHops = 4)
+        chainsA.firstOrNull { it.contains(nameB.lowercase()) }?.let {
+            return it.replace("->", "→") + " 🔗"
+        }
+        val chainsB = traceChain(nameB, maxHops = 4)
+        chainsB.firstOrNull { it.contains(nameA.lowercase()) }?.let {
+            return it.replace("->", "→") + " 🔗"
+        }
+        return null
+    }
+
+    /** "Tell me about Python" -> joins all known connections for that concept. */
+    suspend fun answerAboutConcept(nodeName: String): String? {
+        val node = dao.getNodeByName(nodeName.lowercase().trim()) ?: return null
+        val related = getRelatedConcepts(nodeName)
+        if (related.isEmpty()) return null
+
+        val lines = related.mapNotNull { edge ->
+            val isOutgoing = edge.fromNodeId == node.id
+            val otherId = if (isOutgoing) edge.toNodeId else edge.fromNodeId
+            val otherNode = dao.getNodeById(otherId) ?: return@mapNotNull null
+            val relLabel = edge.relation.lowercase().replace("_", " ")
+            if (isOutgoing) "${node.name} $relLabel ${otherNode.name}"
+            else "${otherNode.name} $relLabel ${node.name}"
+        }
+        return if (lines.isEmpty()) null else lines.distinct().joinToString(". ") + " 🔗"
+    }
 }
