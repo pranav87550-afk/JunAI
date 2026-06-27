@@ -8,6 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.junai.app.memory.MemoryDao
 import com.junai.app.memory.MemoryEntity
+import com.junai.app.memory.SemanticFactDao
+import com.junai.app.memory.SemanticFactEntity
 
 @Database(
     entities = [
@@ -20,9 +22,10 @@ import com.junai.app.memory.MemoryEntity
         FailureLog::class,
         LearningItem::class,
         LearningStatistics::class,
-        MemoryEntity::class
+        MemoryEntity::class,
+        SemanticFactEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun knowledgeDao(): KnowledgeDao
     abstract fun learningDao(): LearningDao
     abstract fun memoryDao(): MemoryDao
+    abstract fun semanticFactDao(): SemanticFactDao
 
     companion object {
         @Volatile
@@ -46,7 +50,6 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Learning Items
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS learning_items (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -62,7 +65,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Knowledge Items
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS knowledge_items (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -77,7 +79,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Command Items
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS command_items (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -91,7 +92,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Skill Items
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS skill_items (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -103,7 +103,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Alias Items
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS alias_items (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -113,7 +112,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Related Questions
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS related_questions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -124,7 +122,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Failure Log
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS failure_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -136,7 +133,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Learning Statistics
                 database.execSQL("""
                     CREATE TABLE IF NOT EXISTS learning_statistics (
                         id INTEGER PRIMARY KEY NOT NULL,
@@ -150,7 +146,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """)
 
-                // Insert default statistics row
                 database.execSQL("""
                     INSERT OR IGNORE INTO learning_statistics 
                     (id, knowledgeLearned, commandsLearned, skillsLearned, totalIntents, failedQueries, totalQueries, lastUpdated)
@@ -159,7 +154,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        // NEW — Phase 1: Hybrid Memory System
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("""
@@ -180,6 +174,24 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // NEW — Phase 4: Semantic Memory
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS semantic_facts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        subject TEXT NOT NULL DEFAULT 'USER',
+                        predicate TEXT NOT NULL,
+                        objectValue TEXT NOT NULL,
+                        category TEXT NOT NULL DEFAULT 'GENERAL',
+                        confidence REAL NOT NULL DEFAULT 0.8,
+                        sourceText TEXT NOT NULL DEFAULT '',
+                        timestamp INTEGER NOT NULL
+                    )
+                """)
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -187,7 +199,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "junai_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
                 INSTANCE = instance
                 instance
