@@ -2,14 +2,16 @@ package com.junai.app.memory
 
 import android.content.Context
 import com.junai.app.AppDatabase
+import com.junai.app.learning.LearningEngineV2
 
 /**
  * SemanticMemoryRepository — Connects SemanticFactExtractor (write path),
  * SemanticQueryResolver (read path), and SemanticFactDao (storage).
  *
- * ChatIntentHandler calls:
- * - captureFact(text)  -> extracts & stores a structured fact, if any pattern matched
- * - answerQuery(text)  -> resolves a semantic question into a human-readable answer
+ * Phase 14 (NEW): captureFact() now checks for an existing exact match
+ * before inserting. If the same fact is stated again ("I like Python"
+ * said 3 times), it REINFORCES the existing row's confidence via
+ * LearningEngineV2 instead of creating duplicate rows that never improve.
  */
 class SemanticMemoryRepository(context: Context) {
 
@@ -17,6 +19,16 @@ class SemanticMemoryRepository(context: Context) {
 
     suspend fun captureFact(text: String): SemanticFactEntity? {
         val extracted = SemanticFactExtractor.extract(text) ?: return null
+
+        val existing = dao.getExactFact(extracted.predicate, extracted.objectValue, extracted.category)
+        if (existing != null) {
+            val reinforced = existing.copy(
+                confidence = LearningEngineV2.reinforce(existing.confidence),
+                timestamp = System.currentTimeMillis()
+            )
+            dao.update(reinforced)
+            return reinforced
+        }
 
         val entity = SemanticFactEntity(
             predicate = extracted.predicate,
@@ -55,7 +67,7 @@ class SemanticMemoryRepository(context: Context) {
             "IS"       -> "you are"
             else       -> "you mentioned"
         }
-        return "I remember $verb ${fact.objectValue} 🙂"
+        return "I remember $verb ${fact.objectValue} \uD83D\uDE42"
     }
 
     suspend fun getAllFacts(): List<SemanticFactEntity> = dao.getAll()
