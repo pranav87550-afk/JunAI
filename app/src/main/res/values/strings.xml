@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">JunAI</string>
+    <string name="accessibility_service_description">Jun ko poori screen pe aapki touch track karne deta hai taaki Jun ki aankhein follow kar sakein</string>
+    <string name="accessibility_service_summary">Pupils follow your touch anywhere on screen</string>
+    <string name="agent_accessibility_service_description">Lets Jun read what\'s on your screen and tap/type on your behalf to complete tasks you ask for — like opening apps, reading messages, or changing settings. Jun never reads passwords, PINs, or OTPs.</string>
+    <string name="agent_accessibility_service_summary">Needed for Jun\'s Agent mode to see and control the screen</string>
+</resources>
