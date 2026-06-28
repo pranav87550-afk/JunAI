@@ -32,6 +32,7 @@ class SplashActivity : AppCompatActivity() {
 
     private var soundPool: SoundPool? = null
     private var swipeSoundId: Int = 0
+    private var soundLoaded: Boolean = false  // track if sound is ready
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,11 +58,18 @@ class SplashActivity : AppCompatActivity() {
             .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
+        // Fix: null-safe build, no !! force unwrap
         soundPool = SoundPool.Builder()
             .setMaxStreams(1)
             .setAudioAttributes(attrs)
             .build()
-        swipeSoundId = soundPool!!.load(this, R.raw.swipe_sound, 1)
+            .also { pool ->
+                // Fix: wait for load complete before marking ready
+                pool.setOnLoadCompleteListener { _, _, status ->
+                    soundLoaded = (status == 0)
+                }
+                swipeSoundId = pool.load(this, R.raw.swipe_sound, 1)
+            }
     }
 
     /** Logo fades + scales in with a slight overshoot. */
@@ -195,7 +203,6 @@ class SplashActivity : AppCompatActivity() {
                 if (progress < 100) {
                     handler.postDelayed(this, 40)
                 } else {
-                    // Show the fully-loaded splash for a beat before swiping away
                     loadingStatus.setWaveText("Jun is ready! 🚀")
                     handler.postDelayed({ goToMainActivity() }, 550)
                 }
@@ -203,20 +210,35 @@ class SplashActivity : AppCompatActivity() {
         }, 40)
     }
 
-    /** Plays the swipe sound and slides the whole splash screen up to reveal MainActivity. */
+    /**
+     * Fix: Sound aur swipe animation ek saath start hote hain.
+     *
+     * Pehle: play() → startActivity() → finish() immediately
+     * Sound stream Activity destroy hone se cut off ho jaata tha.
+     *
+     * Ab: play() aur slide animation simultaneously trigger hote hain.
+     * Activity 400ms baad finish hoti hai — itne mein sound (~300ms) complete
+     * ho jaata hai. SoundPool bhi tabhi release hota hai.
+     */
     private fun goToMainActivity() {
         pulseAnimator?.cancel()
-        soundPool?.play(swipeSoundId, 0.8f, 0.8f, 1, 0, 1f)
+
+        // Sound aur transition ek saath
+        if (soundLoaded) {
+            soundPool?.play(swipeSoundId, 0.8f, 0.8f, 1, 0, 1f)
+        }
         startActivity(Intent(this, MainActivity::class.java))
         overridePendingTransition(R.anim.splash_slide_up_enter, R.anim.slide_up_exit)
-        finish()
+
+        // Finish slightly after so sound isn't cut off by onDestroy
+        handler.postDelayed({ finish() }, 400)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         pulseAnimator?.cancel()
+        handler.removeCallbacksAndMessages(null)
         soundPool?.release()
         soundPool = null
-        handler.removeCallbacksAndMessages(null)
     }
 }
