@@ -3,6 +3,7 @@ package com.junai.app.memory
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 
 @Dao
 interface KnowledgeGraphDao {
@@ -23,6 +24,12 @@ interface KnowledgeGraphDao {
     // ── Edges ──
     @Insert
     suspend fun insertEdge(edge: GraphEdgeEntity): Long
+
+    // NEW (Phase 14) — lets KnowledgeGraphRepository reinforce an edge's
+    // confidence when the same relation is stated again, instead of
+    // leaving it static forever.
+    @Update
+    suspend fun updateEdge(edge: GraphEdgeEntity)
 
     @Query("SELECT * FROM graph_edges WHERE fromNodeId = :nodeId AND relation = :relation AND toNodeId = :toNodeId LIMIT 1")
     suspend fun getEdge(nodeId: Int, relation: String, toNodeId: Int): GraphEdgeEntity?
