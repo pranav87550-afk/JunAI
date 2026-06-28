@@ -13,6 +13,9 @@ import com.junai.app.memory.MemoryDao
 import com.junai.app.memory.MemoryEntity
 import com.junai.app.memory.SemanticFactDao
 import com.junai.app.memory.SemanticFactEntity
+import com.junai.app.planning.PlanDao
+import com.junai.app.planning.PlanEntity
+import com.junai.app.planning.PlanStepEntity
 import com.junai.app.reasoning.ReflectionDao
 import com.junai.app.reasoning.ReflectionEntity
 
@@ -31,9 +34,11 @@ import com.junai.app.reasoning.ReflectionEntity
         SemanticFactEntity::class,
         GraphNodeEntity::class,
         GraphEdgeEntity::class,
-        ReflectionEntity::class
+        ReflectionEntity::class,
+        PlanEntity::class,
+        PlanStepEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -44,6 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun semanticFactDao(): SemanticFactDao
     abstract fun knowledgeGraphDao(): KnowledgeGraphDao
     abstract fun reflectionDao(): ReflectionDao
+    abstract fun planDao(): PlanDao
 
     companion object {
         @Volatile
@@ -226,7 +232,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        // NEW — Phase 7: Reflection Engine
         private val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("""
@@ -247,6 +252,31 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // NEW — Phase 10: Planner
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS plans (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        goalText TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'ACTIVE',
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """)
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS plan_steps (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        planId INTEGER NOT NULL,
+                        stepText TEXT NOT NULL,
+                        stepOrder INTEGER NOT NULL,
+                        isCompleted INTEGER NOT NULL DEFAULT 0,
+                        completedAt INTEGER
+                    )
+                """)
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -254,7 +284,10 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "junai_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(
+                    MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
+                    MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8
+                )
                 .build()
                 INSTANCE = instance
                 instance
