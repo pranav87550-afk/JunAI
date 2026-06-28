@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">JunAI</string>
-    <string name="accessibility_service_description">Jun ko poori screen pe aapki touch track karne deta hai taaki Jun ki aankhein follow kar sakein</string>
-    <string name="accessibility_service_summary">Pupils follow your touch anywhere on screen</string>
-</resources>
