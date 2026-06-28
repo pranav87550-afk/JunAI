@@ -2,11 +2,16 @@ package com.junai.app.memory
 
 import android.content.Context
 import com.junai.app.AppDatabase
+import com.junai.app.learning.LearningEngineV2
 
 /**
  * KnowledgeGraphRepository — Connects GraphRelationExtractor (write path)
  * with KnowledgeGraphDao (storage), plus traversal/answer methods used by
  * ChatIntentHandler's graph-question intercept.
+ *
+ * Phase 14 (NEW): captureRelation() now REINFORCES an existing edge's
+ * confidence (via LearningEngineV2, same curve as semantic facts) when the
+ * same relation is stated again, instead of just silently no-op'ing.
  */
 class KnowledgeGraphRepository(context: Context) {
 
@@ -20,7 +25,11 @@ class KnowledgeGraphRepository(context: Context) {
         val toNode = findOrCreateNode(extracted.objectValue, extracted.objectType)
 
         val existing = dao.getEdge(fromNode.id, extracted.relation, toNode.id)
-        if (existing != null) return existing
+        if (existing != null) {
+            val reinforced = existing.copy(confidence = LearningEngineV2.reinforce(existing.confidence))
+            dao.updateEdge(reinforced)
+            return reinforced
+        }
 
         val edge = GraphEdgeEntity(
             fromNodeId = fromNode.id,
@@ -72,32 +81,27 @@ class KnowledgeGraphRepository(context: Context) {
     suspend fun getAllNodes(): List<GraphNodeEntity> = dao.getAllNodes()
     suspend fun getAllEdges(): List<GraphEdgeEntity> = dao.getAllEdges()
 
-    // ── NEW — Answer formatters for ChatIntentHandler's graph-question intercept ──
-
-    /** "What is Python used for?" -> "python is used for jun ai" */
     suspend fun answerUsedFor(nodeName: String): String? {
         val node = dao.getNodeByName(nodeName.lowercase().trim()) ?: return null
         val edges = dao.getOutgoingByRelation(node.id, "USED_FOR")
         if (edges.isEmpty()) return null
         val targets = edges.mapNotNull { dao.getNodeById(it.toNodeId)?.name }
         if (targets.isEmpty()) return null
-        return "${node.name} is used for ${targets.joinToString(", ")} 🔗"
+        return "${node.name} is used for ${targets.joinToString(", ")} \uD83D\uDD17"
     }
 
-    /** "How are Python and Jun AI related?" -> walks the chain in either direction. */
     suspend fun answerHowRelated(nameA: String, nameB: String): String? {
         val chainsA = traceChain(nameA, maxHops = 4)
         chainsA.firstOrNull { it.contains(nameB.lowercase()) }?.let {
-            return it.replace("->", "→") + " 🔗"
+            return it.replace("->", "→") + " \uD83D\uDD17"
         }
         val chainsB = traceChain(nameB, maxHops = 4)
         chainsB.firstOrNull { it.contains(nameA.lowercase()) }?.let {
-            return it.replace("->", "→") + " 🔗"
+            return it.replace("->", "→") + " \uD83D\uDD17"
         }
         return null
     }
 
-    /** "Tell me about Python" -> joins all known connections for that concept. */
     suspend fun answerAboutConcept(nodeName: String): String? {
         val node = dao.getNodeByName(nodeName.lowercase().trim()) ?: return null
         val related = getRelatedConcepts(nodeName)
@@ -111,6 +115,6 @@ class KnowledgeGraphRepository(context: Context) {
             if (isOutgoing) "${node.name} $relLabel ${otherNode.name}"
             else "${otherNode.name} $relLabel ${node.name}"
         }
-        return if (lines.isEmpty()) null else lines.distinct().joinToString(". ") + " 🔗"
+        return if (lines.isEmpty()) null else lines.distinct().joinToString(". ") + " \uD83D\uDD17"
     }
 }
