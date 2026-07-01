@@ -51,6 +51,15 @@ class RuleRepository(private val context: Context) {
         )
     )
 
+    // BUGFIX: getRecommendation() had no memory of what it already told the
+    // user — every single call re-evaluated the rules fresh, so a rule that
+    // stays true for a while (like LATE_NIGHT, true for the entire 11pm-5am
+    // window) fired again on literally every message during that window.
+    // Track when each rule last actually got shown and suppress repeats
+    // within the cooldown window.
+    private val lastShownAt = mutableMapOf<String, Long>()
+    private val cooldownMs = 30 * 60 * 1000L // 30 minutes
+
     /** Builds a fresh context from live device state. */
     fun buildContext(): ReasoningContext {
         val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
@@ -67,7 +76,12 @@ class RuleRepository(private val context: Context) {
 
     /** Evaluates starter rules against current device state, returns top recommendation if any. */
     fun getRecommendation(): ReasoningRule? {
-        return ReasoningEngine.evaluate(rules, buildContext())
+        val result = ReasoningEngine.evaluate(rules, buildContext()) ?: return null
+        val now = System.currentTimeMillis()
+        val last = lastShownAt[result.id]
+        if (last != null && now - last < cooldownMs) return null
+        lastShownAt[result.id] = now
+        return result
     }
 
     fun getAllRules(): List<ReasoningRule> = rules
