@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder file — keeps this folder from disappearing when Git tracks
+     only files (empty directories aren't tracked). Safe to leave in place;
+     it isn't referenced anywhere. Do not remove the .xml extension, or the
+     Android resource build will fail trying to parse it as a resource. -->
+<resources />
