@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#050508">
+
+    <!-- Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="16dp"
+        android:background="#0A0A12">
+
+        <LinearLayout
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/crystal_glass_button"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Back"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Screen Reading"
+            android:textColor="#1565C0"
+            android:textSize="20sp"
+            android:textStyle="bold|italic"
+            android:gravity="center"
+            android:shadowColor="#1565C0"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="10"/>
+
+        <View android:layout_width="70dp" android:layout_height="1dp"/>
+
+    </LinearLayout>
+
+    <!-- Neon Divider -->
+    <View android:layout_width="match_parent" android:layout_height="1.5dp" android:background="#1565C0"/>
+    <View android:layout_width="match_parent" android:layout_height="4dp" android:background="#221565C0"/>
+
+    <!-- Explainer -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Allow karo taaki Jun in apps ke screens seekh sake, aur khud kaam kar sake bina sikhaye. Default sabke liye Deny hai."
+        android:textColor="#99FFFFFF"
+        android:textSize="11sp"
+        android:padding="14dp"/>
+
+    <!-- Search bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/crystal_glass_button"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="8dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔍"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/searchInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:hint="App search karo"
+            android:textColorHint="#66FFFFFF"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:maxLines="1"
+            android:inputType="text"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/appListRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="16dp"/>
+
+</LinearLayout>
