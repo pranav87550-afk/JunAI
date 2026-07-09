@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 7 — one row per autonomously-executed step (via the Phase 5
+    path-finder), NOT the same as the existing per-message thumbs in
+    item_message_jun.xml (that one rates a whole chat response and feeds
+    FeedbackLearner's separate Q&A knowledge store; this one rates a
+    single executed edge and feeds PassiveConfidenceScorer). Same icon
+    set reused for visual consistency, different meaning underneath.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/permission_item_bg"
+    android:paddingStart="12dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:layout_marginTop="4dp">
+
+    <TextView
+        android:id="@+id/stepLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="#CCFFFFFF"
+        android:textSize="12sp"
+        android:maxLines="2"
+        android:ellipsize="end"/>
+
+    <ImageButton
+        android:id="@+id/stepThumbsUp"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:background="@drawable/rounded_dark_button"
+        android:src="@drawable/ic_thumbs_up"
+        android:padding="5dp"
+        android:layout_marginStart="8dp"
+        android:contentDescription="Sahi tha"/>
+
+    <ImageButton
+        android:id="@+id/stepThumbsDown"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:background="@drawable/rounded_dark_button"
+        android:src="@drawable/ic_thumbs_down"
+        android:padding="5dp"
+        android:layout_marginStart="6dp"
+        android:contentDescription="Galat tha"/>
+
+</LinearLayout>
