@@ -77,6 +77,16 @@ matching function: {"name": "<FUNCTION_NAME>", "target": "<value or empty string
 If nothing matches, respond with {"name": "NONE", "target": ""}.
 Do not include any explanation, only the JSON object.
 
+IMPORTANT: only call a function when the user wants the action performed
+RIGHT NOW. If the user is instead asking to be TAUGHT, EXPLAINED, or
+INFORMED about how something works — even if it mentions the same words
+as a function (app names, "open", "call", etc.) — respond with
+{"name": "NONE", "target": ""} instead. For example:
+- "whatsapp khol do" -> call OPEN_APP (an actual instruction)
+- "whatsapp kholna sikhao" -> NONE (asking to be taught, not to open it)
+- "mummy ko call karo" -> call CALL_CONTACT (an actual instruction)
+- "call kaise karte hain" -> NONE (asking how calling works, not to call anyone)
+
 Available functions:
 $FUNCTION_DECLARATIONS
 """.trimIndent()
