@@ -234,7 +234,12 @@ object ChatEngine {
                 "re-confirm the same conclusion multiple times. Once you have an answer, " +
                 "stop thinking and give it."
             )
-        ))
+        )),
+        samplerConfig = com.google.ai.edge.litertlm.SamplerConfig(
+            topK = 40,
+            topP = 0.95,
+            temperature = 0.7
+        )
     )
 
     /**
