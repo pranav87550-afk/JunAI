@@ -6,7 +6,12 @@ plugins {
 
 android {
     namespace = "com.junai.app"
-    compileSdk = 35
+    // BUGFIX: bumped from 35 — llamacpp-kotlin:0.4.0's transitive
+    // androidx.core-ktx:1.18.0 dependency requires compileSdk 36+.
+    // targetSdk left at 35 on purpose — compileSdk just controls which
+    // APIs are available to compile against, targetSdk is a separate,
+    // bigger decision (opts into new runtime behavior) for later.
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.junai.app"
