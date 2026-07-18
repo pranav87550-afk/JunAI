@@ -21,6 +21,9 @@ object GGUFChatEngine {
     @Volatile
     private var loaded = false
 
+    @Volatile
+    private var appContext: Context? = null
+
     private val initMutex = Mutex()
     private val inferenceMutex = Mutex()
 
@@ -34,6 +37,7 @@ object GGUFChatEngine {
             }
             withContext(Dispatchers.IO) {
                 try {
+                    appContext = context.applicationContext
                     Breadcrumb.log(context, "GGUFChatEngine(Llamatik): about to updateGenerateParams")
                     LlamaBridge.updateGenerateParams(
                         temperature = 0.7f,
@@ -103,11 +107,16 @@ object GGUFChatEngine {
                 val sb = StringBuilder()
                 val done = CompletableDeferred<Boolean>()
                 try {
+                    appContext?.let { Breadcrumb.log(it, "GGUFChatEngine(Llamatik): about to call generateStream() (native)") }
                     LlamaBridge.generateStream(text, object : GenStream {
                         override fun onDelta(text: String) { sb.append(text) }
-                        override fun onComplete() { done.complete(true) }
+                        override fun onComplete() {
+                            appContext?.let { Breadcrumb.log(it, "GGUFChatEngine(Llamatik): generateStream onComplete") }
+                            done.complete(true)
+                        }
                         override fun onError(message: String) {
                             android.util.Log.w(TAG, "tryChat onError: $message")
+                            appContext?.let { Breadcrumb.log(it, "GGUFChatEngine(Llamatik): generateStream onError: $message") }
                             done.complete(false)
                         }
                     })
