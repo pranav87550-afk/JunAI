@@ -123,14 +123,19 @@ class ModelManagerActivity : AppCompatActivity() {
             }
             testResultView.text = "Loading model…"
             lifecycleScope.launch {
-                com.junai.app.ml.GGUFChatEngine.init(this@ModelManagerActivity)
-                if (!com.junai.app.ml.GGUFChatEngine.isReady()) {
-                    testResultView.text = "Failed to load model — check Logcat for GGUFChatEngine errors"
-                    return@launch
+                try {
+                    com.junai.app.ml.GGUFChatEngine.init(this@ModelManagerActivity)
+                    if (!com.junai.app.ml.GGUFChatEngine.isReady()) {
+                        testResultView.text = "Failed to load model — check Logcat for GGUFChatEngine errors"
+                        return@launch
+                    }
+                    testResultView.text = "Model loaded. Generating…"
+                    val response = com.junai.app.ml.GGUFChatEngine.tryChat("Hello! Who are you?")
+                    testResultView.text = response ?: "Generation failed or timed out — check Logcat"
+                } catch (e: Exception) {
+                    testResultView.text = "Exception: ${e.javaClass.simpleName}: ${e.message}"
+                    android.util.Log.e("ModelManagerActivity", "GGUF test crashed", e)
                 }
-                testResultView.text = "Model loaded. Generating…"
-                val response = com.junai.app.ml.GGUFChatEngine.tryChat("Hello! Who are you?")
-                testResultView.text = response ?: "Generation failed or timed out — check Logcat"
             }
         }
         container.addView(testButton)
