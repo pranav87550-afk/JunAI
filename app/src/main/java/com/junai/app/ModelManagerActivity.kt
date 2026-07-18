@@ -7,6 +7,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import com.junai.app.ml.ModelCatalog
 import com.junai.app.ml.ModelDownloadManager
 import com.junai.app.ml.ModelStateStore
@@ -121,7 +122,7 @@ class ModelManagerActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             testResultView.text = "Loading model…"
-            androidx.lifecycle.lifecycleScope.launch {
+            lifecycleScope.launch {
                 com.junai.app.ml.GGUFChatEngine.init(this@ModelManagerActivity)
                 if (!com.junai.app.ml.GGUFChatEngine.isReady()) {
                     testResultView.text = "Failed to load model — check Logcat for GGUFChatEngine errors"
