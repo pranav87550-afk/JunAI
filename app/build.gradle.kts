@@ -6,16 +6,11 @@ plugins {
 
 android {
     namespace = "com.junai.app"
-    // BUGFIX: bumped from 35 — llamacpp-kotlin:0.4.0's transitive
-    // androidx.core-ktx:1.18.0 dependency requires compileSdk 36+.
-    // targetSdk left at 35 on purpose — compileSdk just controls which
-    // APIs are available to compile against, targetSdk is a separate,
-    // bigger decision (opts into new runtime behavior) for later.
     compileSdk = 36
 
     defaultConfig {
         applicationId = "com.junai.app"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -38,12 +33,6 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    // Model files (.task/.litertlm) used to live in assets/ and needed
-    // noCompress here so AAPT wouldn't corrupt them for MediaPipe's mmap
-    // loading. They're downloaded to filesDir/models/ at runtime now
-    // (see ModelCatalog/ModelDownloadManager) instead, so this isn't
-    // needed anymore — kept as an empty block as a landmark in case that
-    // ever changes back.
     androidResources {
 
 }
@@ -68,10 +57,12 @@ dependencies {
     implementation("com.google.mediapipe:tasks-text:0.10.21")
     implementation("com.google.mediapipe:tasks-genai:0.10.27")
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
-    // llama.cpp/GGUF migration (Piece 1) — kotlinllamacpp, published on
-    // Maven Central so it resolves like litertlm-android above: no local
-    // NDK/CMake build needed, prebuilt native binaries ship in the AAR.
-    // Intended to run ALONGSIDE ChatEngine.kt (LiteRT-LM) for A/B
-    // comparison via a new GGUFChatEngine.kt — not a replacement yet.
-    implementation("io.github.ljcamargo:llamacpp-kotlin:0.4.0")
+    // llama.cpp/GGUF migration — switched from io.github.ljcamargo:llamacpp-kotlin
+    // (0.4.0, immature, crashed natively on model load with zero JVM
+    // stack trace or breadcrumb, undebuggable without adb/logcat) to
+    // Llamatik: Maven Central, 135★, actively maintained, used in real
+    // production apps (Llamatik Code IntelliJ plugin), and crucially
+    // exposes onError callbacks instead of silently segfaulting.
+    // Requires minSdk 26 (bumped above from 24).
+    implementation("com.llamatik:library:1.7.0")
 }
