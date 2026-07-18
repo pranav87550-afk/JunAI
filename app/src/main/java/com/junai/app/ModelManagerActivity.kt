@@ -122,7 +122,8 @@ class ModelManagerActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             testResultView.text = "Loading model…"
-            lifecycleScope.launch {
+com.junai.app.ml.Breadcrumb.log(this, "ModelManagerActivity: about to reference GGUFChatEngine.init() (class-load happens here)")
+lifecycleScope.launch {
                 try {
                     com.junai.app.ml.GGUFChatEngine.init(this@ModelManagerActivity)
                     if (!com.junai.app.ml.GGUFChatEngine.isReady()) {
