@@ -41,16 +41,8 @@ object GGUFChatEngine {
 
     private const val TAG = "GGUFChatEngine"
 
-    // kotlinllamacpp docs use 2048/4096 in their own examples. Starting
-    // at 2048 (lower than ChatEngine's 4096) since llama.cpp's KV-cache
-    // memory cost scales with context length and this is untested on
-    // real devices yet — raise later once we've confirmed no OOM issues
-    // on lower-RAM phones.
     private const val CONTEXT_LENGTH = 2048
 
-    // How long to wait for one generation to finish before giving up —
-    // generation could in theory hang forever without this (no timeout
-    // built into predict() itself as far as the library docs show).
     private const val GENERATION_TIMEOUT_MS = 120_000L
 
     @Volatile
@@ -59,19 +51,13 @@ object GGUFChatEngine {
     @Volatile
     private var loaded = false
 
+    @Volatile
+    private var appContext: Context? = null
+
     private val initMutex = Mutex()
 
-    // Only ONE generation at a time — llmFlow below is a single shared
-    // stream for the whole object, so two concurrent predict() calls
-    // would have their tokens interleaved in the same flow with no way
-    // to tell which word belongs to which call. Same concern ChatEngine
-    // solved with initMutex, just for inference instead of init here.
     private val inferenceMutex = Mutex()
 
-    // Own scope since this is a singleton object, not a ViewModel — the
-    // library's recommended pattern (see its README) ties this scope to
-    // a ViewModel's lifecycle; we don't have one, so this lives as long
-    // as the process does, same as `engine`/`conversation` in ChatEngine.
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val llmFlow = MutableSharedFlow<LlamaHelper.LLMEvent>(
@@ -89,22 +75,16 @@ object GGUFChatEngine {
             }
             withContext(Dispatchers.IO) {
                 try {
+                    appContext = context.applicationContext
                     val helper = LlamaHelper(
                         context.applicationContext.contentResolver,
                         scope,
                         llmFlow,
                     )
                     val modelFile = ModelDownloadManager.localPathFor(context, ModelCatalog.ModelId.QWEN3_CHAT_GGUF)
-                    // Fixed app-storage file, not a user-picked one, so
-                    // Uri.fromFile() is enough — no persistable
-                    // permission dance needed (that's only required for
-                    // the File Picker / content:// case per the
-                    // library's README).
                     val modelUri = Uri.fromFile(modelFile).toString()
 
-                    // load() is callback-based, not suspend — bridge it
-                    // so init() can be awaited the same way ChatEngine's
-                    // init() is.
+                    Breadcrumb.log(context, "GGUFChatEngine: about to call helper.load() (native)")
                     suspendCancellableCoroutine<Unit> { cont ->
                         try {
                             helper.load(path = modelUri, contextLength = CONTEXT_LENGTH) {
@@ -114,6 +94,7 @@ object GGUFChatEngine {
                             if (cont.isActive) cont.cancel(e)
                         }
                     }
+                    Breadcrumb.log(context, "GGUFChatEngine: helper.load() callback returned OK")
                     llamaHelper = helper
                     loaded = true
                     android.util.Log.i(TAG, "GGUF model loaded OK")
@@ -128,14 +109,8 @@ object GGUFChatEngine {
 
     fun isReady(): Boolean = llamaHelper != null && loaded
 
-    /** One update from streamChat() — mirrors ChatEngine.StreamState's shape, minus the thinking/answer split (no <think> tags with this runtime by default). */
     data class StreamState(val answerSoFar: String, val isFinal: Boolean)
 
-    /**
-     * Live-streaming version — emits growing text as tokens arrive.
-     * Returns null immediately if not ready, same non-blocking contract
-     * as ChatEngine.streamChat().
-     */
     fun streamChat(text: String): Flow<StreamState>? {
         if (!isReady()) return null
         val helper = llamaHelper ?: return null
@@ -171,10 +146,6 @@ object GGUFChatEngine {
         }
     }
 
-    /**
-     * One-shot version, mirrors ChatEngine.tryChat() — null if not
-     * ready or generation failed/timed out.
-     */
     suspend fun tryChat(text: String): String? {
         if (!isReady()) return null
         val helper = llamaHelper ?: return null
@@ -193,8 +164,10 @@ object GGUFChatEngine {
                     }
                 }
                 val result = try {
+                    appContext?.let { Breadcrumb.log(it, "GGUFChatEngine: about to call helper.predict() (native)") }
                     helper.predict(text)
                     val success = withTimeoutOrNull(GENERATION_TIMEOUT_MS) { done.await() } ?: false
+                    appContext?.let { Breadcrumb.log(it, "GGUFChatEngine: predict() flow completed, success=$success") }
                     if (success && sb.isNotBlank()) sb.toString().trim() else null
                 } catch (e: Exception) {
                     android.util.Log.w(TAG, "tryChat failed: ${e.message}")
