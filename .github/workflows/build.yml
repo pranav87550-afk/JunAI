@@ -32,31 +32,6 @@ jobs:
       - name: Build Debug APK
         run: gradle assembleDebug
 
-      # TEMPORARY DEBUG STEP — remove once GGUFChatEngine.kt's import is
-      # fixed. Our guessed import (io.github.ljcamargo.llamacpp.LlamaHelper)
-      # failed with "Unresolved reference: io", so this digs into the
-      # actual downloaded AAR to find LlamaHelper's real package. Runs
-      # even though the build above failed, since the AAR itself
-      # downloads fine (only OUR Kotlin code fails to compile) —
-      # if: always() keeps this step running regardless.
-      - name: DEBUG - find llamacpp-kotlin real package name
-        if: always()
-        run: |
-          AAR=$(find ~/.gradle/caches -ipath "*llamacpp-kotlin*" -iname "*.aar" | head -1)
-          echo "AAR path: $AAR"
-          if [ -n "$AAR" ]; then
-            mkdir -p /tmp/aar_extract
-            unzip -o "$AAR" -d /tmp/aar_extract > /dev/null
-            CLASSES_JAR=$(find /tmp/aar_extract -iname "classes.jar" | head -1)
-            echo "classes.jar path: $CLASSES_JAR"
-            if [ -n "$CLASSES_JAR" ]; then
-              echo "--- Classes matching Llama/LLMEvent ---"
-              unzip -l "$CLASSES_JAR" | grep -i -E "llama|llmevent"
-            fi
-          else
-            echo "AAR not found in Gradle cache — dependency may not have resolved."
-          fi
-
       - name: Publish APK to a Release
         # BUGFIX: actions/upload-artifact shares a 500MB/month quota
         # with GitHub Packages on the Free plan — our APK alone (~850MB)
