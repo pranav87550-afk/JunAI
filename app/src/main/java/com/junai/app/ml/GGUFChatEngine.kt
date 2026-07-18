@@ -20,44 +20,18 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
-/**
- * GGUFChatEngine — Piece 2 of the llama.cpp migration (see ChatEngine.kt
- * for the full backstory/diagnosis of why LiteRT-LM is being replaced).
- *
- * NOT wired into the router yet — this exists standalone so it can be
- * tested/loaded/chatted with in isolation (e.g. from a debug screen)
- * before it ever touches the real ChatIntentHandler fallback chain.
- * Swapping ChatEngine → GGUFChatEngine in the router is a later piece,
- * once this is confirmed working on-device.
- *
- * API shape deliberately mirrors ChatEngine.kt (init/isReady/streamChat/
- * tryChat/close) even though the underlying library (kotlinllamacpp's
- * LlamaHelper) has a very different internal design — event-flow based
- * (MutableSharedFlow<LLMEvent>) rather than a suspend-returning
- * Conversation object. All of that translation lives in here so callers
- * never need to know the difference.
- */
 object GGUFChatEngine {
 
     private const val TAG = "GGUFChatEngine"
-
     private const val CONTEXT_LENGTH = 2048
-
     private const val GENERATION_TIMEOUT_MS = 120_000L
 
-    @Volatile
-    private var llamaHelper: LlamaHelper? = null
-
-    @Volatile
-    private var loaded = false
-
-    @Volatile
-    private var appContext: Context? = null
+    @Volatile private var llamaHelper: LlamaHelper? = null
+    @Volatile private var loaded = false
+    @Volatile private var appContext: Context? = null
 
     private val initMutex = Mutex()
-
     private val inferenceMutex = Mutex()
-
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val llmFlow = MutableSharedFlow<LlamaHelper.LLMEvent>(
@@ -66,6 +40,7 @@ object GGUFChatEngine {
     )
 
     suspend fun init(context: Context) {
+        Breadcrumb.log(context, "GGUFChatEngine: init() called")
         if (isReady()) return
         initMutex.withLock {
             if (isReady()) return@withLock
@@ -75,13 +50,16 @@ object GGUFChatEngine {
             }
             withContext(Dispatchers.IO) {
                 try {
+                    Breadcrumb.log(context, "GGUFChatEngine: init() entered IO block, about to construct LlamaHelper")
                     appContext = context.applicationContext
                     val helper = LlamaHelper(
                         context.applicationContext.contentResolver,
                         scope,
                         llmFlow,
                     )
+                    Breadcrumb.log(context, "GGUFChatEngine: LlamaHelper constructed OK")
                     val modelFile = ModelDownloadManager.localPathFor(context, ModelCatalog.ModelId.QWEN3_CHAT_GGUF)
+                    Breadcrumb.log(context, "GGUFChatEngine: model file path = ${modelFile.absolutePath}, exists=${modelFile.exists()}, size=${modelFile.length()}")
                     val modelUri = Uri.fromFile(modelFile).toString()
 
                     Breadcrumb.log(context, "GGUFChatEngine: about to call helper.load() (native)")
