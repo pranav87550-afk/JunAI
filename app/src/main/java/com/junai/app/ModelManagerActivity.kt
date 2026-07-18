@@ -126,7 +126,7 @@ class ModelManagerActivity : AppCompatActivity() {
                     }
                     testResultView.text = "Model loaded. Generating…"
                     val response = com.junai.app.ml.GGUFChatEngine.tryChat("Hello! Who are you?")
-                    testResultView.text = response ?: "Generation failed or timed out — check Logcat"
+                    testResultView.text = response?.answer?.takeIf { it.isNotBlank() } ?: "Generation failed or timed out — check Logcat"
                 } catch (e: Exception) {
                     testResultView.text = "Exception: ${e.javaClass.simpleName}: ${e.message}"
                     android.util.Log.e("ModelManagerActivity", "GGUF test crashed", e)
