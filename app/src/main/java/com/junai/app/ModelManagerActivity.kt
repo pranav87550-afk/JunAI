@@ -10,6 +10,7 @@ import androidx.lifecycle.Observer
 import com.junai.app.ml.ModelCatalog
 import com.junai.app.ml.ModelDownloadManager
 import com.junai.app.ml.ModelStateStore
+import kotlinx.coroutines.launch
 
 /**
  * Lets the user download the 3 on-device models (Embedding/FunctionGemma/
@@ -45,10 +46,6 @@ class ModelManagerActivity : AppCompatActivity() {
 
             val approxMb = model.approxSizeBytes / (1024 * 1024)
 
-            // Re-read on every observed status change rather than
-            // caching — keeps this in lockstep with ModelStateStore's
-            // "always derive, never cache" approach instead of
-            // introducing its own local copy that could drift.
             ModelStateStore.observe(this, model.id).observe(this, Observer { info ->
                 when (info.status) {
                     ModelStateStore.Status.NOT_DOWNLOADED -> {
@@ -110,5 +107,32 @@ class ModelManagerActivity : AppCompatActivity() {
 
             container.addView(row)
         }
+
+        // TEMPORARY TEST HOOK (Piece 3 of the GGUF migration) — lets us
+        // confirm GGUFChatEngine actually loads + generates on a real
+        // device before it's wired into the main chat router. Remove
+        // once that wiring happens (GGUFChatEngine replaces/joins
+        // ChatEngine in the router) and this becomes redundant.
+        val testButton = Button(this).apply { text = "Test GGUF Chat" }
+        val testResultView = TextView(this).apply { setPadding(24, 24, 24, 24) }
+        testButton.setOnClickListener {
+            if (!ModelDownloadManager.isDownloaded(this, ModelCatalog.ModelId.QWEN3_CHAT_GGUF)) {
+                android.widget.Toast.makeText(this, "Download the GGUF model first", android.widget.Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            testResultView.text = "Loading model…"
+            androidx.lifecycle.lifecycleScope.launch {
+                com.junai.app.ml.GGUFChatEngine.init(this@ModelManagerActivity)
+                if (!com.junai.app.ml.GGUFChatEngine.isReady()) {
+                    testResultView.text = "Failed to load model — check Logcat for GGUFChatEngine errors"
+                    return@launch
+                }
+                testResultView.text = "Model loaded. Generating…"
+                val response = com.junai.app.ml.GGUFChatEngine.tryChat("Hello! Who are you?")
+                testResultView.text = response ?: "Generation failed or timed out — check Logcat"
+            }
+        }
+        container.addView(testButton)
+        container.addView(testResultView)
     }
 }
