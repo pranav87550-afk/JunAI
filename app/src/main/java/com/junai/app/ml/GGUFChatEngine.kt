@@ -2,7 +2,7 @@ package com.junai.app.ml
 
 import android.content.Context
 import android.net.Uri
-import io.github.ljcamargo.llamacpp.LlamaHelper
+import org.nehuatl.llamacpp.LlamaHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
