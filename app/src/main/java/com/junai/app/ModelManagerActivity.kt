@@ -121,9 +121,9 @@ class ModelManagerActivity : AppCompatActivity() {
                 android.widget.Toast.makeText(this, "Download the GGUF model first", android.widget.Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
+            testButton.isEnabled = false
             testResultView.text = "Loading model…"
-com.junai.app.ml.Breadcrumb.log(this, "ModelManagerActivity: about to reference GGUFChatEngine.init() (class-load happens here)")
-lifecycleScope.launch {
+            lifecycleScope.launch {
                 try {
                     com.junai.app.ml.GGUFChatEngine.init(this@ModelManagerActivity)
                     if (!com.junai.app.ml.GGUFChatEngine.isReady()) {
@@ -136,10 +136,11 @@ lifecycleScope.launch {
                 } catch (e: Exception) {
                     testResultView.text = "Exception: ${e.javaClass.simpleName}: ${e.message}"
                     android.util.Log.e("ModelManagerActivity", "GGUF test crashed", e)
+                } finally {
+                    testButton.isEnabled = true
                 }
             }
         }
         container.addView(testButton)
         container.addView(testResultView)
     }
-}
