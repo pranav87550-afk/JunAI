@@ -13,15 +13,6 @@ import com.junai.app.ml.ModelDownloadManager
 import com.junai.app.ml.ModelStateStore
 import kotlinx.coroutines.launch
 
-/**
- * Lets the user download the 3 on-device models (Embedding/FunctionGemma/
- * Qwen3) from Hugging Face at runtime, instead of them being bundled in
- * the APK. Reached via the drawer menu ("Models"). Only 3 items total,
- * so this deliberately skips RecyclerView/Adapter machinery — a plain
- * loop inflating item_model_download.xml once per model into a
- * ScrollView is simpler and has fewer moving parts to get wrong for a
- * list this short.
- */
 class ModelManagerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -144,3 +135,4 @@ class ModelManagerActivity : AppCompatActivity() {
         container.addView(testButton)
         container.addView(testResultView)
     }
+}
