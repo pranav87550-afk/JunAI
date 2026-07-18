@@ -37,6 +37,12 @@ object ModelCatalog {
         EMBEDDING_GEMMA,
         FUNCTION_GEMMA,
         QWEN3_CHAT,
+        // llama.cpp/GGUF migration — separate from QWEN3_CHAT (LiteRT-LM)
+        // on purpose. Same underlying model (Qwen3 0.6B), different
+        // runtime/quant format, downloaded to a different file. Keeping
+        // both ModelIds lets the app run either engine side-by-side for
+        // comparison instead of an all-or-nothing swap.
+        QWEN3_CHAT_GGUF,
     }
 
     /**
@@ -83,6 +89,13 @@ object ModelCatalog {
             fileName = "qwen3_0_6b_mixed_int4.litertlm",
             approxSizeBytes = 498L * 1024 * 1024,
             description = "General chat and understanding",
+        ),
+        ModelInfo(
+            id = ModelId.QWEN3_CHAT_GGUF,
+            displayName = "Qwen3 0.6B (GGUF)",
+            fileName = "Qwen3-0.6B-Q4_K_M.gguf",
+            approxSizeBytes = 397L * 1024 * 1024,
+            description = "General chat and understanding — llama.cpp runtime (testing)",
         ),
     )
 
