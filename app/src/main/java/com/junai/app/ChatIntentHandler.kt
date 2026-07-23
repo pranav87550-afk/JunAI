@@ -278,7 +278,7 @@ class ChatIntentHandler(
      * other ml/ engines.
      */
     private suspend fun buildRagContext(query: String): String? {
-        val matches = com.junai.app.ml.KnowledgeBase.retrieve(query)
+        val matches = com.junai.app.ml.KnowledgeBase.retrieve(activity, query)
         if (matches.isEmpty()) return null
         val facts = matches.joinToString("\n") { "- ${it.content}" }
         return "[Known facts, use these if relevant to the question below:\n$facts]"
