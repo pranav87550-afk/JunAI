@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        App-wide base theme. Explicitly locks android:fontFamily (and the
+        AppCompat fontFamily attr, for API <16 compat) to "sans-serif" —
+        the AOSP alias that resolves to Roboto — instead of leaving it
+        unset and inheriting whatever "system default" font the device's
+        OEM skin ships (e.g. ColorOS can ship its own default typeface on
+        some builds). All activities should use this theme (or a style
+        that extends it) instead of Theme.AppCompat.Light.NoActionBar
+        directly, so every screen renders with the same font.
+
+        Note: "sans-serif" is an alias, not a bundled font file — on stock
+        Android and the vast majority of OEM skins (including ColorOS)
+        it resolves to actual Roboto. A tiny handful of heavily-skinned
+        OEM builds remap this alias to their own font, in which case the
+        only 100%-guaranteed-everywhere fix is bundling real Roboto .ttf
+        files under res/font/ and referencing those directly. Not done
+        here since it needs the actual font files added to the repo.
+    -->
+    <style name="Theme.JunAI" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
+
+    <style name="WhiteTimePicker" parent="Theme.AppCompat.Light">
+    <item name="android:textColor">#FFFFFF</item>
+    <item name="android:textColorPrimary">#FFFFFF</item>
+    <item name="android:textColorSecondary">#FFFFFF</item>
+    <item name="colorAccent">#E53935</item>
+    <item name="android:colorControlNormal">#FFFFFF</item>
+    <item name="android:colorControlActivated">#E53935</item>
+    <item name="android:background">#0A0A0F</item>
+</style>
+
+    <style name="DarkDialog" parent="Theme.AppCompat.Dialog.Alert">
+    <item name="android:background">#1A1A1A</item>
+    <item name="android:textColor">#FFFFFF</item>
+    <item name="colorAccent">#E53935</item>
+</style>
+
+    <style name="WhiteHintEditText" parent="Widget.AppCompat.EditText">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorHint">#888888</item>
+    </style>
+</resources>
